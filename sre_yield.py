@@ -52,6 +52,8 @@ CATEGORIES = {
     sre_constants.CATEGORY_NOT_SPACE: Not(string.whitespace),
 }
 
+# This constant varies between builds of Python; this is the lower value.
+MAX_REPEAT_COUNT = 65535
 
 class WrappedSequence(object):
     """This wraps a sequence, purely as a base clase for the other uses."""
@@ -194,6 +196,7 @@ class RegexMembershipSequence(WrappedSequence):
 
     def max_repeat_values(self, min_count, max_count, items):
         """Sequential expansion of the count to be combinatorics."""
+        max_count = min(max_count, self.max_count)
         return RepetitiveSequence(
             self.sub_values(items), min_count, max_count)
 
@@ -230,7 +233,7 @@ class RegexMembershipSequence(WrappedSequence):
         # No idea what to do here
         return ['<<<%s>>>' % repr(parsed)]
 
-    def __init__(self, pattern, flags=0, charset=CHARSET):
+    def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         if not flags & re.DOTALL:
@@ -243,6 +246,11 @@ class RegexMembershipSequence(WrappedSequence):
           raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
         elif flags & re.LOCALE:
           raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+
+        if max_count is None:
+            self.max_count = MAX_REPEAT_COUNT
+        else:
+            self.max_count = max_count
 
         # Configure the parser backends
         self.backends = {
@@ -271,9 +279,9 @@ class RegexMembershipSequence(WrappedSequence):
         return self.matcher.match(item) is not None
 
 
-def Values(regex, flags=0, charset=CHARSET):
+def Values(regex, flags=0, charset=CHARSET, max_count=None):
     """Function wrapper that hides the class constructor details."""
-    return RegexMembershipSequence(regex, flags, charset)
+    return RegexMembershipSequence(regex, flags, charset, max_count=max_count)
 
 
 def main(argv):

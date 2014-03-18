@@ -119,6 +119,10 @@ class YieldTest(unittest.TestCase):
         parsed = sre_yield.Values('.', charset='abc\n', flags=re.DOTALL)
         self.assertEquals(['a', 'b', 'c', '\n'], parsed[:])
 
+    def testMaxCount(self):
+        parsed = sre_yield.Values('[01]+', max_count=4)
+        self.assertEquals('1111', parsed[-1])
+
 
 if __name__ == '__main__':
     unittest.main()
