@@ -236,6 +236,14 @@ class RegexMembershipSequence(WrappedSequence):
         if not flags & re.DOTALL:
           charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
+
+        if flags & re.IGNORECASE:
+          raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+        elif flags & re.UNICODE:
+          raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+        elif flags & re.LOCALE:
+          raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
