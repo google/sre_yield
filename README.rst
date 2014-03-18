@@ -144,7 +144,7 @@ Can find matches by using randomization, so sort of handles anchors.  Not
 guaranteed though, but another good look at internals.
 http://web.archive.org/web/20071024164712/http://www.uselesspython.com/jpetkau1.py
 (and slightly older version in the announcement on `python-list
-<https://mail.python.org/pipermail/python-list/2001-August/104757.html>`_.
+<https://mail.python.org/pipermail/python-list/2001-August/104757.html>`_).
 
 
 Differences between sre_yield and the re module
