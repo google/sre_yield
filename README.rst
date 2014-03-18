@@ -75,7 +75,7 @@ number.
 
     >>> v2 = sre_yield.Values('.{,30}(' + s + ').{,30}')
     >>> v2.__len__()  # too big for int
-    72364459805470264331318111329329854383874247461544108187346887222425103149725694449978785141919481961332579776870175343423952594138719229338529303L
+    57220492262913872576843611006974799576789176661653180757625052079917448874638816841926032487457234703154759402702651149752815320219511292208238103L
     >>> 'kennedy' in v2
     True
 
@@ -172,7 +172,6 @@ other exceptions:
   yet this appears to work fine.
 - Order does not depend on greediness.
 - The regex is treated as fullmatch.
-- DOTALL is assumed.
 - ``sre_yield`` is confused by even the simplest of anchors:
 
   .. code-block:: pycon

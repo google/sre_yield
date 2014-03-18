@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import unittest
 
 import sre_yield
@@ -22,7 +23,7 @@ class SlowYieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 
     def testDotStarCase(self):
-        test_size = sre_yield.Values('.*').__len__()
+        test_size = sre_yield.Values('.*', re.DOTALL).__len__()
         actual_size = 0
         for _ in xrange(65536):
             actual_size = actual_size * 256 + 1

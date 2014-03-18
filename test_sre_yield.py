@@ -16,6 +16,7 @@
 
 import re
 import unittest
+import re
 
 import sre_yield
 
@@ -32,11 +33,12 @@ class YieldTest(unittest.TestCase):
 
     def testOtherCases(self):
         self.assertSequenceEqual(sre_yield.Values('[aeiou]'), list('aeiou'))
-        self.assertEquals(len(sre_yield.Values('1.3')), 256)
-        v = sre_yield.Values('[^-]3[._]1415')
+        self.assertEquals(len(sre_yield.Values('1.3', flags=re.DOTALL)), 256)
+        v = sre_yield.Values('[^-]3[._]1415', flags=re.DOTALL)
         print list(v)
         self.assertEquals(len(v), 510)
-        self.assertEquals(len(sre_yield.Values('(.|5[6-9]|[6-9][0-9])[a-z].?')),
+        self.assertEquals(len(sre_yield.Values('(.|5[6-9]|[6-9][0-9])[a-z].?',
+                                               flags=re.DOTALL)),
                           300 * 26 * 257)
         self.assertEquals(len(sre_yield.Values('..', charset='0123456789')),
                           100)
@@ -110,6 +112,12 @@ class YieldTest(unittest.TestCase):
             self.assertGreater(len(matching), 5)
             parsed = sre_yield.Values('\\' + c)
             self.assertEquals(sorted(matching), sorted(parsed[:]))
+
+    def testDotallFlag(self):
+        parsed = sre_yield.Values('.', charset='abc\n')
+        self.assertEquals(['a', 'b', 'c'], parsed[:])
+        parsed = sre_yield.Values('.', charset='abc\n', flags=re.DOTALL)
+        self.assertEquals(['a', 'b', 'c', '\n'], parsed[:])
 
 
 if __name__ == '__main__':
