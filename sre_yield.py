@@ -55,6 +55,11 @@ CATEGORIES = {
 # This constant varies between builds of Python; this is the lower value.
 MAX_REPEAT_COUNT = 65535
 
+
+class ParseError(Exception):
+    pass
+
+
 class WrappedSequence(object):
     """This wraps a sequence, purely as a base clase for the other uses."""
 

@@ -123,6 +123,11 @@ class YieldTest(unittest.TestCase):
         parsed = sre_yield.Values('[01]+', max_count=4)
         self.assertEquals('1111', parsed[-1])
 
+    def testParseErrors(self):
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.I)
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.U)
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.L)
+
 
 if __name__ == '__main__':
     unittest.main()
