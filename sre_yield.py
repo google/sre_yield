@@ -214,6 +214,8 @@ class RegexMembershipSequence(WrappedSequence):
     def __init__(self, pattern, flags=0, charset=CHARSET):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
+        if not flags & re.DOTALL:
+          charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
         # Configure the parser backends
         self.backends = {
