@@ -215,6 +215,14 @@ class RegexMembershipSequence(WrappedSequence):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         self.charset = charset
+
+        if flags & re.IGNORECASE:
+          raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+        elif flags & re.UNICODE:
+          raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+        elif flags & re.LOCALE:
+          raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
