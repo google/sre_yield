@@ -100,6 +100,10 @@ class YieldTest(unittest.TestCase):
         self.assertEquals(parsed[98], '98')
         self.assertEquals(parsed[99], '99')
 
+    def testMaxCount(self):
+        parsed = sre_yield.Values('[01]+', max_count=4)
+        self.assertEquals('1111', parsed[-1])
+
 
 if __name__ == '__main__':
     unittest.main()
