@@ -27,6 +27,7 @@ __author__ = 'alexperry@google.com (Alex Perry)'
 import re
 import sre_constants
 import sre_parse
+import string
 import sys
 import types
 
@@ -35,6 +36,21 @@ _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
 CHARSET = [chr(c) for c in xrange(256)]
+
+WORD = string.letters + string.digits + '_'
+
+def Not(chars):
+  return ''.join(sorted(set(CHARSET) - set(chars)))
+
+
+CATEGORIES = {
+    sre_constants.CATEGORY_WORD: WORD,
+    sre_constants.CATEGORY_NOT_WORD: Not(WORD),
+    sre_constants.CATEGORY_DIGIT: string.digits,
+    sre_constants.CATEGORY_NOT_DIGIT: Not(string.digits),
+    sre_constants.CATEGORY_SPACE: string.whitespace,
+    sre_constants.CATEGORY_NOT_SPACE: Not(string.whitespace),
+}
 
 
 class WrappedSequence(object):
@@ -192,6 +208,9 @@ class RegexMembershipSequence(WrappedSequence):
         return self.in_values(((sre_constants.NEGATE,),
                               (sre_constants.LITERAL, y),))
 
+    def category(self, y):
+        return CATEGORIES[y]
+
     def sub_values(self, parsed):
         """This knows how to convert one piece of parsed pattern."""
         # If this is a subpattern object, we just want its data
@@ -230,6 +249,7 @@ class RegexMembershipSequence(WrappedSequence):
                 lambda _: self.in_values(((sre_constants.NEGATE,),)),
             sre_constants.IN: self.in_values,
             sre_constants.NOT_LITERAL: self.not_literal,
+            sre_constants.CATEGORY: self.category,
         }
         # Now build a generator that knows all possible patterns
         self.raw = self.sub_values(sre_parse.parse(pattern, flags))
