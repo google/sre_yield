@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 import unittest
 
 import sre_yield
@@ -99,6 +100,16 @@ class YieldTest(unittest.TestCase):
         self.assertEquals(parsed[1], '01')
         self.assertEquals(parsed[98], '98')
         self.assertEquals(parsed[99], '99')
+
+    def testCategories(self):
+        cat_chars = 'wWdDsS'
+        all_ascii = map(chr, range(256))
+        for c in cat_chars:
+            r = re.compile('\\' + c)
+            matching = [i for i in all_ascii if r.match(i)]
+            self.assertGreater(len(matching), 5)
+            parsed = sre_yield.Values('\\' + c)
+            self.assertEquals(sorted(matching), sorted(parsed[:]))
 
 
 if __name__ == '__main__':
