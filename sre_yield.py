@@ -236,7 +236,7 @@ class RegexMembershipSequence(WrappedSequence):
             if matcher in self.backends:
                 return self.backends[matcher](*arguments)
         # No idea what to do here
-        return ['<<<%s>>>' % repr(parsed)]
+        raise ParseError(repr(parsed))
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
