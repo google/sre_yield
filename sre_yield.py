@@ -178,8 +178,8 @@ class RepetitiveSequence(WrappedSequence):
                 continue
             result = []
             for _ in xrange(count):
-                result.append(self.content[i % self.content_length])
-                i //= self.content_length
+                i, idx = divmod(i, self.content_length)
+                result.append(self.content[idx])
             # smallest place value ends up on the right
             return ''.join(result[::-1])
         raise IndexError('Too Big')
