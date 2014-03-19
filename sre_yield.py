@@ -40,7 +40,7 @@ CHARSET = [chr(c) for c in xrange(256)]
 WORD = string.letters + string.digits + '_'
 
 def Not(chars):
-  return ''.join(sorted(set(CHARSET) - set(chars)))
+    return ''.join(sorted(set(CHARSET) - set(chars)))
 
 
 CATEGORIES = {
@@ -242,15 +242,15 @@ class RegexMembershipSequence(WrappedSequence):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         if not flags & re.DOTALL:
-          charset = ''.join(c for c in charset if c != '\n')
+            charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
 
         if flags & re.IGNORECASE:
-          raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+            raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
         elif flags & re.UNICODE:
-          raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
         elif flags & re.LOCALE:
-          raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
 
         if max_count is None:
             self.max_count = MAX_REPEAT_COUNT
