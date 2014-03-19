@@ -128,6 +128,27 @@ class YieldTest(unittest.TestCase):
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.U)
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.L)
 
+    def testSavingGroups(self):
+        parsed = sre_yield.Values(r'(([abc])d)e')
+        d = {}
+        self.assertEquals('ade', parsed.get_item(0, d))
+        self.assertEquals('ad', d[1])
+        self.assertEquals('a', d[2])
+
+    def testSavingGroupsByName(self):
+        parsed = sre_yield.Values(r'x(?P<foo>[abc])x')
+        d = {}
+        self.assertEquals('xax', parsed.get_item(0, d))
+        self.assertEquals('a', d[1])
+        self.assertEquals('a', d['foo'])
+
+
+    def testBackrefCounts(self):
+        parsed = sre_yield.Values(r'([abc])-\1')
+        self.assertEquals(3, len(parsed))
+        self.assertEquals(['a-a', 'b-b', 'c-c'], parsed[:])
+
+
 
 if __name__ == '__main__':
     unittest.main()

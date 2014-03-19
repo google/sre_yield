@@ -70,7 +70,12 @@ class WrappedSequence(object):
         # to convert the returned number from a long-int to an ordinary int.
         self.length = raw.__len__()
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        #print self.__class__.__name__, d
+        if i < -self.length or i >= self.length:
+            raise IndexError(i)
+        if hasattr(self.raw, 'get_item'):
+            return self.raw.get_item(i, d)
         return self.raw[i]
 
     def __len__(self):
@@ -108,7 +113,8 @@ class SlicedSequence(WrappedSequence):
         self.length = ((self.stop - self.start + abs(self.steps) - 1) /
                        abs(self.steps))
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        #print self.__class__.__name__, d
         j = i * self.steps + self.start
         return self.raw[j]
 
@@ -120,7 +126,8 @@ class ConcatenatedSequence(WrappedSequence):
         self.list_lengths = [(a, a.__len__()) for a in alternatives]
         self.length = sum(a_len for _, a_len in self.list_lengths)
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        #print self.__class__.__name__, d
         for a, a_len in self.list_lengths:
             if i < a_len:
                 return a[i]
@@ -141,15 +148,20 @@ class CombinatoricsSequence(WrappedSequence):
     """This uses all combinations of one item from each passed list."""
 
     def __init__(self, *components):
+        #print "Combin", components[:5]
         self.list_lengths = [(a, a.__len__()) for a in components]
         self.length = 1
         for _, c_len in self.list_lengths:
             self.length *= c_len
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        #print self.__class__.__name__, d
         result = []
         for c, c_len in self.list_lengths:
-            result.append(c[i % c_len])
+            if hasattr(c, 'get_item'):
+                result.append(c.get_item(i % c_len, d))
+            else:
+                result.append(c[i % c_len])
             i //= c_len
         return ''.join(result)
 
@@ -170,7 +182,8 @@ class RepetitiveSequence(WrappedSequence):
             sublength *= self.content_length
         self.length = sum(c for _, c in self.count_length)
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        #print self.__class__.__name__, d
         """Finds out how many repeats this index implies, then picks strings."""
         for count, sublength in self.count_length:
             if i >= sublength:
@@ -186,6 +199,34 @@ class RepetitiveSequence(WrappedSequence):
 
     def __repr__(self):
         return '{repeat ' + repr(self.count_length) + '}'
+
+
+class WritingVisitor(WrappedSequence):
+    def __init__(self, parsed, keys):
+        #print "WritingVisitor", len(parsed), keys
+        self.keys = keys
+        super(WritingVisitor, self).__init__(parsed)
+
+    def get_item(self, n, d=None):
+        rv = super(WritingVisitor, self).get_item(n, d)
+        if d is not None:
+            for k in self.keys:
+                d[k] = rv
+        #print "WritingVisitor return", rv, d
+        return rv
+
+
+class ReadingVisitor(WrappedSequence):
+    def __init__(self, n):
+        self.num = n
+        self.length = 1
+
+    def get_item(self, i, d=None):
+        if i != 0:
+            raise IndexError(i)
+        if d is None:
+            raise ValueError('ReadingVisitor with no dict')
+        return d.get(self.num, "fail")
 
 
 class RegexMembershipSequence(WrappedSequence):
@@ -219,6 +260,18 @@ class RegexMembershipSequence(WrappedSequence):
     def category(self, y):
         return CATEGORIES[y]
 
+    def groupref(self, n):
+        self.has_groupref = True
+        return ReadingVisitor(n)
+
+    def get_item(self, i, d=None):
+        if self.has_groupref or d is not None:
+            if d is None:
+                d = {}
+            return super(RegexMembershipSequence, self).get_item(i, d)
+        else:
+            return super(RegexMembershipSequence, self).get_item(i)
+
     def sub_values(self, parsed):
         """This knows how to convert one piece of parsed pattern."""
         # If this is a subpattern object, we just want its data
@@ -238,12 +291,24 @@ class RegexMembershipSequence(WrappedSequence):
         # No idea what to do here
         raise ParseError(repr(parsed))
 
+    def maybe_save(self, group, parsed):
+        #print "MS", group, parsed
+        rv = self.sub_values(parsed)
+        if group is not None:
+            keys = [group]
+            if group in self.groupsave:
+                keys.append(self.groupsave[group])
+            rv = WritingVisitor(rv, keys)
+        return rv
+
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         if not flags & re.DOTALL:
             charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
+
+        self.groupsave = dict([(v, k) for (k, v) in self.matcher.groupindex.iteritems()])
 
         if flags & re.IGNORECASE:
             raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
@@ -257,11 +322,13 @@ class RegexMembershipSequence(WrappedSequence):
         else:
             self.max_count = max_count
 
+        self.has_groupref = False
+
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
             sre_constants.RANGE: lambda l, h: [chr(c) for c in xrange(l, h+1)],
-            sre_constants.SUBPATTERN: lambda _, items: self.sub_values(items),
+            sre_constants.SUBPATTERN: self.maybe_save,
             sre_constants.BRANCH: self.branch_values,
             sre_constants.MIN_REPEAT: self.max_repeat_values,
             sre_constants.MAX_REPEAT: self.max_repeat_values,
@@ -273,6 +340,7 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.IN: self.in_values,
             sre_constants.NOT_LITERAL: self.not_literal,
             sre_constants.CATEGORY: self.category,
+            sre_constants.GROUPREF: self.groupref,
         }
         # Now build a generator that knows all possible patterns
         self.raw = self.sub_values(sre_parse.parse(pattern, flags))
