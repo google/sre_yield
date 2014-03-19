@@ -80,6 +80,32 @@ number.
     True
 
 
+Capturing Groups
+================
+
+If you're interested in extracting what would match during generation of a
+value, you can use get_item with the optional second parameter.
+
+.. code-block:: pycon
+
+    >>> v = sre_yield.Values(r'a(\d)b')
+    >>> d = {}
+    >>> v.get_item(0, d)
+    'a0b'
+    >>> d
+    {1: '0'}
+
+This even works for simplistic backreferences, in this case to have matching quotes.
+
+.. code-block:: pycon
+
+    >>> v = sre_yield.Values(r'(["\'])([01]{3})\1')
+    >>> d = {}
+    >>> v.get_item(0, d)
+    '"000"'
+    >>> d
+    {1: '"', 2: '000'}
+
 
 Reporting Bugs, etc.
 ====================
