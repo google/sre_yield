@@ -28,8 +28,6 @@ def genmod(x, by, chunk=None):
       if (by ** digits_per_chunk) != chunk:
         raise ValueError("Chunk=%d must be a power of by=%d" % (chunk, by))
 
-  #print "genmod", chunk, by, digits_per_chunk
-
   assert digits_per_chunk > 0
 
   while x:
@@ -44,18 +42,10 @@ def genmod(x, by, chunk=None):
 
 
 def basic_divmod(x, by, chunk=None):
-  # chunk is ignored.
-  #print by
+  # for testing. chunk is ignored.
   while x:
     x, m = divmod(x, by)
     yield m
-
-def powersum(x, low, high):
-  # http://mikestoolbox.com/powersum.html
-  xm1 = x - 1
-  a = (x ** (high + 1) - 1) / xm1
-  b = (x ** low - 1) / xm1
-  return a - b
 
 def powersum(x, low, high):
   # http://mikestoolbox.com/powersum.html
