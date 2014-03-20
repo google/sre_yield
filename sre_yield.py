@@ -182,7 +182,7 @@ class RepetitiveSequence(WrappedSequence):
           self.offsets.append((offset, count))
           offset += sublength
         t3 = time.time()
-        print "len", self.length
+        #print "len", self.length
         #print "init", t1-t0, t2-t1, t3-t2
         #print self.offsets
 
@@ -194,8 +194,8 @@ class RepetitiveSequence(WrappedSequence):
           by_bisect -= 1
         #print by_bisect, self.offsets[by_bisect]
         num = i - self.offsets[by_bisect][0]
-        print self.offsets[by_bisect], i, num, self.content_length
-        print 'counts', self.count_length
+        #print self.offsets[by_bisect], i, num, self.content_length
+        #print 'counts', self.count_length
 
         t1 = time.time()
 
@@ -208,7 +208,7 @@ class RepetitiveSequence(WrappedSequence):
             break
         else:
             raise IndexError('Too Big')
-        print "Correct index", i
+        #print "Correct index", i
         t2 = time.time()
         #tmp = orig_i - self.offsets[by_bisect][0]
         #print i, tmp, count, self.offsets[by_bisect][1]
@@ -220,16 +220,17 @@ class RepetitiveSequence(WrappedSequence):
         result = []
 
         for modulus in fastdivmod.genmod(num, self.content_length):
-          print "mod", modulus
+          #print "mod", modulus
           result.append(content[modulus])
 
         leftover = count - len(result)
         if leftover:
+          print "leftover", leftover
           result.extend([content[0]] * leftover)
 
         # smallest place value ends up on the right
         t3 = time.time()
-        print t1-t0, t2-t1, t3-t2
+        #print t1-t0, t2-t1, t3-t2
         return ''.join(result[::-1])
 
     def __repr__(self):

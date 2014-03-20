@@ -24,7 +24,7 @@ class YieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 
     def testSimpleCases(self):
-        self.assertSequenceEqual(sre_yield.Values('1(234?|49?)'),
+        self.assertSequenceEqual(list(sre_yield.Values('1(234?|49?)')),
                                  ['123', '1234', '14', '149'])
         self.assertSequenceEqual(sre_yield.Values('asd|def'),
                                  ['asd', 'def'])

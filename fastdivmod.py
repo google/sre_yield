@@ -8,19 +8,28 @@ def genmod(x, by, chunk=None):
   automatically to match native int size.
   """
 
+  if by == 1:
+      assert x == 0, x
+      yield 0
+      return
+
   if chunk is None:
-    chunk = sys.maxint - sys.maxint % by
+      digits_per_chunk = int(log(sys.maxint) / log(by))
+      chunk = by ** digits_per_chunk
+      if chunk > sys.maxint:
+          chunk /= by
+          assert chunk <= sys.maxint, chunk
+  else:
+      digits_per_chunk = int(round(log(chunk) / log(by)))
+      if (by ** digits_per_chunk) != chunk:
+        raise ValueError("Chunk=%d must be a power of by=%d" % (chunk, by))
 
-  if chunk % by != 0:
-    raise ValueError("Chunk %d must be a multiple of by %d" % (chunk, by))
-
-  inner_count = int(ceil(log(chunk) / log(by)))
-  print chunk, by, inner_count
+  #print chunk, by, digits_per_chunk
 
   while x:
     x, this_chunk = divmod(x, chunk)
     #this_chunk = int(this_chunk)
-    for _ in xrange(inner_count):
+    for _ in xrange(digits_per_chunk):
       this_chunk, m = divmod(this_chunk, by)
       yield m
 
@@ -30,7 +39,7 @@ def genmod(x, by, chunk=None):
 
 def basic_divmod(x, by, chunk=None):
   # chunk is ignored.
-  print by
+  #print by
   while x:
     x, m = divmod(x, by)
     yield m
