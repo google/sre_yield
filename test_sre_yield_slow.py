@@ -29,6 +29,16 @@ class SlowYieldTest(unittest.TestCase):
             actual_size = actual_size * 256 + 1
         self.assertEquals(test_size, actual_size)
 
+    def testContentsNearBreak(self):
+      # This specific location is on either side of offset_break in sre_yield.py
+      v = sre_yield.Values('.*')
+      a = v[70386233652806655][:10]
+      self.assertEquals('\xff\xff\xff\xff\xff\xff\xff', a)
+      b = v[70386233652806656][:10]
+      self.assertEquals('\x00\x00\x00\x00\x00\x00\x00\x00', b)
+      c = v[70386233652806657][:10]
+      self.assertEquals('\x00\x00\x00\x00\x00\x00\x00\x01', c)
+
 
 if __name__ == '__main__':
     unittest.main()

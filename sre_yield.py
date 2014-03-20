@@ -189,7 +189,7 @@ class RepetitiveSequence(WrappedSequence):
         if self.offsets[-1][0] > sys.maxint:
           i = 0
           while i + 2 < len(self.offsets):
-            if self.offsets[i+1] > sys.maxint:
+            if self.offsets[i+1][0] > sys.maxint:
               self.index_of_offset = i
               self.offset_break = self.offsets[i][0]
               break
