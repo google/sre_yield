@@ -29,3 +29,7 @@ pygments.css:
 
 %.html: %.rst pygments.css
 	$(RST2HTML) --stylesheet=/usr/share/docutils/writers/html4css1/html4css1.css,pygments.css $< > $@
+
+.PHONY: bench
+bench:
+	PYTHON=$(PYTHON) ./bench.sh

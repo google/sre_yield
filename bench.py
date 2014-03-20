@@ -27,20 +27,28 @@ def index(n):
 
 def main(args):
   pattern = args[0]
+  sys.stdout.write("%s\t" % (pattern,)); sys.stdout.flush()
+
+  if len(args) > 1:
+    name = args[1]
+  else:
+    path = sre_yield.__file__
+    if '/' not in path:
+      path = os.getcwd()
+    path = os.path.dirname(path)
+
+    if path.endswith('_vanilla'):
+      name = "old"
+    elif path.endswith('_thatch'):
+      name = "new"
+    else:
+      raise ValueError("Unknown path", path)
+
+  sys.stdout.write("%s\t" % (name,)); sys.stdout.flush()
+
   min_time = 1.0
 
-  sys.stdout.write("%s\t" % (pattern,)); sys.stdout.flush()
-  path = sre_yield.__file__
-  if '/' not in path:
-    path = os.getcwd()
-  path = os.path.dirname(path)
 
-  if path.endswith('_vanilla'):
-    sys.stdout.write("old\t"); sys.stdout.flush()
-  elif path.endswith('_thatch'):
-    sys.stdout.write("new\t"); sys.stdout.flush()
-  else:
-    raise ValueError("Unknown path", path)
 
 
   t0 = time.time()
