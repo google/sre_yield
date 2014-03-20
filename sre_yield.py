@@ -192,7 +192,26 @@ class RepetitiveSequence(WrappedSequence):
           #print "entry_from_prev", i
           return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
 
-        o3 = cachingseq.CachingFuncSequence(arbitrary_entry, highest - lowest+1, entry_from_prev)
+        self.offsets = cachingseq.CachingFuncSequence(
+            arbitrary_entry, highest - lowest+1, entry_from_prev)
+        # TODO make this better (log? then walk left/right?)
+        #      ...doesn't actually have to be sys.maxint, just something around
+        #      there so we can avoid using longs if we don't have to.  All of
+        # In any case, this needs to be a constant in order to reuse
+        # caclulations in future calls to bisect (a moving target will produce
+        # more misses).
+        if self.offsets[-1][0] > sys.maxint:
+          i = 0
+          while i + 2 < len(self.offsets):
+            if self.offsets[i+1] > sys.maxint:
+              self.index_of_offset = i
+              self.offset_break = self.offsets[i][0]
+              break
+            i += 1
+        else:
+          self.index_of_offset = len(self.offsets)
+          self.offset_break = sys.maxint
+
         t2 = time.time()
 
         #assert len(o2) == len(o3), (len(o2), len(o3))
@@ -201,7 +220,6 @@ class RepetitiveSequence(WrappedSequence):
 
         #assert o2[123] == o3[123]
         #assert o2[-1] == o3[-1]
-        self.offsets = o3
 
 
         #print self.offsets
@@ -216,7 +234,11 @@ class RepetitiveSequence(WrappedSequence):
     def get_item(self, i):
         """Finds out how many repeats this index implies, then picks strings."""
         t0 = time.time()
-        by_bisect = bisect.bisect_left(self.offsets, (i, -1))
+        if i < self.offset_break:
+          by_bisect = bisect.bisect_left(self.offsets, (i, -1), hi=self.index_of_offset)
+        else:
+          by_bisect = bisect.bisect_left(self.offsets, (i, -1), lo=self.index_of_offset)
+
         if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
           by_bisect -= 1
         #print "offsets", [self.offsets[t] for t in range(min(10, len(self.offsets)-1))], "..."
