@@ -24,6 +24,10 @@ then the data structure is executed to form a bunch of iterators.
 
 __author__ = 'alexperry@google.com (Alex Perry)'
 
+import fastdivmod
+import time
+import bisect
+import math
 import re
 import sre_constants
 import sre_parse
@@ -165,24 +169,68 @@ class RepetitiveSequence(WrappedSequence):
         self.content_length = content.__len__()
         sublength = self.content_length ** lowest
         self.count_length = []
+        t0 = time.time()
         for count in xrange(lowest, highest + 1):
             self.count_length.append((count, sublength))
             sublength *= self.content_length
+        t1 = time.time()
         self.length = sum(c for _, c in self.count_length)
+        t2 = time.time()
+        offset = 0
+        self.offsets = []
+        for (count, sublength) in self.count_length:
+          self.offsets.append((offset, count))
+          offset += sublength
+        t3 = time.time()
+        print "len", self.length
+        #print "init", t1-t0, t2-t1, t3-t2
+        #print self.offsets
 
     def get_item(self, i):
         """Finds out how many repeats this index implies, then picks strings."""
+        t0 = time.time()
+        by_bisect = bisect.bisect_left(self.offsets, (i, -1))
+        if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
+          by_bisect -= 1
+        #print by_bisect, self.offsets[by_bisect]
+        num = i - self.offsets[by_bisect][0]
+        print self.offsets[by_bisect], i, num, self.content_length
+        print 'counts', self.count_length
+
+        t1 = time.time()
+
+        #orig_i = i
+
         for count, sublength in self.count_length:
             if i >= sublength:
                 i -= sublength
                 continue
-            result = []
-            for _ in xrange(count):
-                i, idx = divmod(i, self.content_length)
-                result.append(self.content[idx])
-            # smallest place value ends up on the right
-            return ''.join(result[::-1])
-        raise IndexError('Too Big')
+            break
+        else:
+            raise IndexError('Too Big')
+        print "Correct index", i
+        t2 = time.time()
+        #tmp = orig_i - self.offsets[by_bisect][0]
+        #print i, tmp, count, self.offsets[by_bisect][1]
+        if count > 100 and self.content_length < 1000:
+          content = list(self.content)
+        else:
+          content = self.content
+
+        result = []
+
+        for modulus in fastdivmod.genmod(num, self.content_length):
+          print "mod", modulus
+          result.append(content[modulus])
+
+        leftover = count - len(result)
+        if leftover:
+          result.extend([content[0]] * leftover)
+
+        # smallest place value ends up on the right
+        t3 = time.time()
+        print t1-t0, t2-t1, t3-t2
+        return ''.join(result[::-1])
 
     def __repr__(self):
         return '{repeat ' + repr(self.count_length) + '}'
