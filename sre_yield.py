@@ -24,6 +24,7 @@ then the data structure is executed to form a bunch of iterators.
 
 __author__ = 'alexperry@google.com (Alex Perry)'
 
+import cachingseq
 import fastdivmod
 import time
 import bisect
@@ -152,9 +153,16 @@ class CombinatoricsSequence(WrappedSequence):
 
     def get_item(self, i):
         result = []
+        if i < 0:
+          i += self.length
+        assert i >= 0
+        assert i < self.length
+
+        #print "Comb get", self.list_lengths, i
         for c, c_len in self.list_lengths:
-            result.append(c[i % c_len])
-            i //= c_len
+            #print "loop", c_len
+            i, mod = divmod(i, c_len)
+            result.append(c[mod])
         return ''.join(result)
 
     def __repr__(self):
@@ -167,23 +175,42 @@ class RepetitiveSequence(WrappedSequence):
     def __init__(self, content, lowest=1, highest=1):
         self.content = content
         self.content_length = content.__len__()
-        sublength = self.content_length ** lowest
-        self.count_length = []
         t0 = time.time()
-        for count in xrange(lowest, highest + 1):
-            self.count_length.append((count, sublength))
-            sublength *= self.content_length
+        self.length = fastdivmod.powersum(self.content_length, lowest, highest)
+        self.lowest = lowest
+        self.highest = highest
         t1 = time.time()
-        self.length = sum(c for _, c in self.count_length)
+        #o2 = []
+        #for i in range(lowest, highest+1):
+        #  o2.append((fastdivmod.powersum(self.content_length, lowest, i-1), i))
+
+        def arbitrary_entry(i):
+          #print "arbitrary_entry", i
+          return (fastdivmod.powersum(self.content_length, lowest, i+lowest-1), i+lowest)
+
+        def entry_from_prev(i, prev):
+          #print "entry_from_prev", i
+          return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
+
+        o3 = cachingseq.CachingFuncSequence(arbitrary_entry, highest - lowest+1, entry_from_prev)
         t2 = time.time()
-        offset = 0
-        self.offsets = []
-        for (count, sublength) in self.count_length:
-          self.offsets.append((offset, count))
-          offset += sublength
-        t3 = time.time()
+
+        #assert len(o2) == len(o3), (len(o2), len(o3))
+        #for i in range(10):
+        #  assert o2[i] == o3[i]
+
+        #assert o2[123] == o3[123]
+        #assert o2[-1] == o3[-1]
+        self.offsets = o3
+
+
+        #print self.offsets
+        #print o2
+
+        #self.offsets = o2
+        #print tmp_offsets == o2
         #print "len", self.length
-        #print "init", t1-t0, t2-t1, t3-t2
+        #print "init", t1-t0, t2-t1
         #print self.offsets
 
     def get_item(self, i):
@@ -192,8 +219,10 @@ class RepetitiveSequence(WrappedSequence):
         by_bisect = bisect.bisect_left(self.offsets, (i, -1))
         if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
           by_bisect -= 1
-        #print by_bisect, self.offsets[by_bisect]
+        #print "offsets", [self.offsets[t] for t in range(min(10, len(self.offsets)-1))], "..."
+        #print "get", i, by_bisect, self.offsets[by_bisect]
         num = i - self.offsets[by_bisect][0]
+        count = self.offsets[by_bisect][1]
         #print self.offsets[by_bisect], i, num, self.content_length
         #print 'counts', self.count_length
 
@@ -201,13 +230,13 @@ class RepetitiveSequence(WrappedSequence):
 
         #orig_i = i
 
-        for count, sublength in self.count_length:
-            if i >= sublength:
-                i -= sublength
-                continue
-            break
-        else:
-            raise IndexError('Too Big')
+        #for count, sublength in self.count_length:
+        #    if i >= sublength:
+        #        i -= sublength
+        #        continue
+        #    break
+        #else:
+        #    raise IndexError('Too Big')
         #print "Correct index", i
         t2 = time.time()
         #tmp = orig_i - self.offsets[by_bisect][0]
@@ -219,13 +248,18 @@ class RepetitiveSequence(WrappedSequence):
 
         result = []
 
+        if count == 0:
+          return ''
+
+        #print "about to genmod", num
+        #print "->", self.content_length
         for modulus in fastdivmod.genmod(num, self.content_length):
-          #print "mod", modulus
           result.append(content[modulus])
 
         leftover = count - len(result)
         if leftover:
-          print "leftover", leftover
+          assert leftover > 0
+          #print "leftover", leftover
           result.extend([content[0]] * leftover)
 
         # smallest place value ends up on the right
@@ -234,7 +268,7 @@ class RepetitiveSequence(WrappedSequence):
         return ''.join(result[::-1])
 
     def __repr__(self):
-        return '{repeat ' + repr(self.count_length) + '}'
+        return '{repeat base=%d low=%d high=%d}' % (self.content_length, self.lowest, self.highest)
 
 
 class RegexMembershipSequence(WrappedSequence):

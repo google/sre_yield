@@ -52,7 +52,7 @@ class YieldTest(unittest.TestCase):
                                  ['ab', 'ac', 'a'])
         self.assertSequenceEqual(sre_yield.Values('a(|b|c)'),
                                  ['a', 'ab', 'ac'])
-        self.assertSequenceEqual(sre_yield.Values('a[bc]?'),
+        self.assertSequenceEqual(list(sre_yield.Values('a[bc]?')),
                                  ['a', 'ab', 'ac'])
         self.assertSequenceEqual(sre_yield.Values('a[bc]??'),
                                  ['a', 'ab', 'ac'])
