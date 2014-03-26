@@ -1,6 +1,28 @@
 from math import log, ceil
 import sys
 
+
+def find_largest_power(less_than, base):
+    power = int(log(less_than) / log(base))
+    return base ** power
+
+
+def divmod_iter(x, by, chunk=None):
+  if x < by:
+    return [x]
+
+  if hasattr(x, 'bit_length'):
+    # crude log(2, x)
+    divisions = x.bit_length() / by.bit_length()
+  else:
+    divisions = log(x) / log(by)
+
+  if divisions < 1024:
+    return basic_divmod(x, by, chunk)
+  else:
+    return genmod(x, by, chunk)
+
+
 def genmod(x, by, chunk=None):
   """Generate successive (x % by); x /= by, but faster.
 
