@@ -157,6 +157,10 @@ class CombinatoricsSequence(WrappedSequence):
         assert i >= 0
         assert i < self.length
 
+        if len(self.list_lengths) == 1:
+          # skip unnecessary ''.join -- big speedup
+          return self.list_lengths[0][0][i]
+
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)
             result.append(c[mod])
@@ -221,7 +225,7 @@ class RepetitiveSequence(WrappedSequence):
         if count == 0:
           return ''
 
-        for modulus in fastdivmod.genmod(num, self.content_length):
+        for modulus in fastdivmod.divmod_iter(num, self.content_length):
           result.append(content[modulus])
 
         leftover = count - len(result)
