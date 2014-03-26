@@ -2,40 +2,40 @@ import sys
 import random
 import itertools
 import unittest
-from fastdivmod import genmod, basic_divmod, powersum
+from fastdivmod import divmod_iter_chunking, divmod_iter_basic, powersum
 
 class FastDivmodTest(unittest.TestCase):
-  def test_basic_divmod(self):
-    v = basic_divmod(1234, 10)
+  def test_divmod_iter_basic(self):
+    v = divmod_iter_basic(1234, 10)
     self.assertEquals([4, 3, 2, 1], list(v))
 
   def test_basics(self):
-    v = genmod(1234, 10, 10)
+    v = divmod_iter_chunking(1234, 10, 10)
     self.assertEquals([4, 3, 2, 1], list(v))
 
-    v = genmod(1234, 10, 100)
+    v = divmod_iter_chunking(1234, 10, 100)
     self.assertEquals([4, 3, 2, 1], list(v))
 
-    v = genmod(1234, 10, 1000)
+    v = divmod_iter_chunking(1234, 10, 1000)
     self.assertEquals([4, 3, 2, 1], list(v))
 
   def test_bad_chunk_sizes(self):
-    g = genmod(1234, 10, 11)
+    g = divmod_iter_chunking(1234, 10, 11)
     self.assertRaises(ValueError, g.next)
 
   def test_huge_number_1(self):
-    v = genmod(70110209207109374, 255)
+    v = divmod_iter_chunking(70110209207109374, 255)
     self.assertEquals([254, 254, 254, 254, 254, 254, 254], list(v))
 
   def test_huge_number_2(self):
     bignum = 1162523670191533212890624
 
     assert 255**11 > bignum
-    v = genmod(bignum, 255, 255**11)
+    v = divmod_iter_chunking(bignum, 255, 255**11)
     self.assertEquals([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], map(int, v))
 
     assert 255**9 < bignum
-    v = genmod(bignum, 255, 255**9)
+    v = divmod_iter_chunking(bignum, 255, 255**9)
     self.assertEquals([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], map(int, v))
 
   def test_huge_number_3(self):
@@ -69,7 +69,7 @@ class FastDivmodTest(unittest.TestCase):
     bignum = long(bignum)
     bignum2 = 3268647867246256383381332100041691484373976788312974266629140102414955744756908184404049903032490380904202638084876187965749304595652472251350L
 
-    v = genmod(bignum, bignum2)
+    v = divmod_iter_chunking(bignum, bignum2)
     # there are at least 3 terms
     v.next()
     v.next()
@@ -94,7 +94,7 @@ def test_correctness_big_numbers():
         yield runner, x, base, chunk
 
 def runner(x, base, chunk):
-  for i, j in itertools.izip_longest(genmod(x, base, chunk), basic_divmod(x, base)):
+  for i, j in itertools.izip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
     if i is None:
       print "phooey"
     else:

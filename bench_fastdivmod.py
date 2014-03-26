@@ -38,17 +38,17 @@ def time_trial(func, args, kwargs):
 
 def pool_runner((trial_type, bignum, a, divisor)):
     if trial_type == 'basic':
-        func = fastdivmod.basic_divmod
+        func = fastdivmod.divmod_iter_basic
         args = [bignum, divisor]
     elif trial_type == 'def':
-        func = fastdivmod.genmod
+        func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor]
     elif trial_type == 'auto':
         func = fastdivmod.divmod_iter
         args = [bignum, divisor]
     elif trial_type == 'mult':
         chunk = fastdivmod.find_largest_power(sys.maxint * a, divisor)
-        func = fastdivmod.genmod
+        func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 1:
             trial_type = '%.2fmi' % (a,)
@@ -60,7 +60,7 @@ def pool_runner((trial_type, bignum, a, divisor)):
 
     elif trial_type == 'pow':
         chunk = fastdivmod.find_largest_power(sys.maxint ** a, divisor)
-        func = fastdivmod.genmod
+        func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 0:
             trial_type = 'mi^%.2f' % (a,)
@@ -72,7 +72,7 @@ def pool_runner((trial_type, bignum, a, divisor)):
 
     elif trial_type == 'dpow':
         chunk = divisor ** a
-        func = fastdivmod.genmod
+        func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 0:
             trial_type = 'd^%.2f' % (a,)

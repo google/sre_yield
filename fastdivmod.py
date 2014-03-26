@@ -18,12 +18,12 @@ def divmod_iter(x, by, chunk=None):
     divisions = log(x) / log(by)
 
   if divisions < 1024:
-    return basic_divmod(x, by, chunk)
+    return divmod_iter_basic(x, by, chunk)
   else:
-    return genmod(x, by, chunk)
+    return divmod_iter_chunking(x, by, chunk)
 
 
-def genmod(x, by, chunk=None):
+def divmod_iter_chunking(x, by, chunk=None):
   """Generate successive (x % by); x /= by, but faster.
 
   If provided, |chunk| must be a power of |by| (otherwise it is determined
@@ -56,8 +56,11 @@ def genmod(x, by, chunk=None):
         break
 
 
-def basic_divmod(x, by, chunk=None):
-  # for testing. chunk is ignored.
+def divmod_iter_basic(x, by, chunk=None):
+  """Generate successive (x % by); x /= by, the obvious way.
+
+  Chunk is ignored.
+  """
   while x:
     x, m = divmod(x, by)
     yield m
