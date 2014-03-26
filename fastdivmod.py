@@ -26,8 +26,8 @@ def divmod_iter(x, by, chunk=None):
 def genmod(x, by, chunk=None):
   """Generate successive (x % by); x /= by, but faster.
 
-  If provided, |chunk| must be a multiple of |by| (otherwise it is determined
-  automatically to match native int size.
+  If provided, |chunk| must be a power of |by| (otherwise it is determined
+  automatically for 1024 per inner loop, based on analysis of bench_genmod.py)
   """
 
   if by == 1:
@@ -36,15 +36,8 @@ def genmod(x, by, chunk=None):
       return
 
   if chunk is None:
-      if by > sys.maxint:
-          digits_per_chunk = 16
-      else:
-          digits_per_chunk = int(log(sys.maxint) / log(by))
+      digits_per_chunk = 1024
       chunk = by ** digits_per_chunk
-      # only useful with calculated digits_per_chunk
-      #if chunk > sys.maxint:
-      #    chunk /= by
-      #    assert chunk <= sys.maxint, chunk
   else:
       digits_per_chunk = int(round(log(chunk) / log(by)))
       if (by ** digits_per_chunk) != chunk:
