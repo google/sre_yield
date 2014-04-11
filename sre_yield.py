@@ -44,7 +44,7 @@ CHARSET = [chr(c) for c in xrange(256)]
 WORD = string.letters + string.digits + '_'
 
 def Not(chars):
-  return ''.join(sorted(set(CHARSET) - set(chars)))
+    return ''.join(sorted(set(CHARSET) - set(chars)))
 
 
 CATEGORIES = {
@@ -153,13 +153,13 @@ class CombinatoricsSequence(WrappedSequence):
     def get_item(self, i):
         result = []
         if i < 0:
-          i += self.length
+            i += self.length
         assert i >= 0
         assert i < self.length
 
         if len(self.list_lengths) == 1:
-          # skip unnecessary ''.join -- big speedup
-          return self.list_lengths[0][0][i]
+            # skip unnecessary ''.join -- big speedup
+            return self.list_lengths[0][0][i]
 
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)
@@ -181,57 +181,57 @@ class RepetitiveSequence(WrappedSequence):
         self.highest = highest
 
         def arbitrary_entry(i):
-          return (fastdivmod.powersum(self.content_length, lowest, i+lowest-1), i+lowest)
+            return (fastdivmod.powersum(self.content_length, lowest, i+lowest-1), i+lowest)
 
         def entry_from_prev(i, prev):
-          return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
+            return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
 
         self.offsets = cachingseq.CachingFuncSequence(
             arbitrary_entry, highest - lowest+1, entry_from_prev)
         # This needs to be a constant in order to reuse caclulations in future
         # calls to bisect (a moving target will produce more misses).
         if self.offsets[-1][0] > sys.maxint:
-          i = 0
-          while i + 2 < len(self.offsets):
-            if self.offsets[i+1][0] > sys.maxint:
-              self.index_of_offset = i
-              self.offset_break = self.offsets[i][0]
-              break
-            i += 1
+            i = 0
+            while i + 2 < len(self.offsets):
+                if self.offsets[i+1][0] > sys.maxint:
+                    self.index_of_offset = i
+                    self.offset_break = self.offsets[i][0]
+                    break
+                i += 1
         else:
-          self.index_of_offset = len(self.offsets)
-          self.offset_break = sys.maxint
+            self.index_of_offset = len(self.offsets)
+            self.offset_break = sys.maxint
 
     def get_item(self, i):
         """Finds out how many repeats this index implies, then picks strings."""
         if i < self.offset_break:
-          by_bisect = bisect.bisect_left(self.offsets, (i, -1), hi=self.index_of_offset)
+            by_bisect = bisect.bisect_left(self.offsets, (i, -1), hi=self.index_of_offset)
         else:
-          by_bisect = bisect.bisect_left(self.offsets, (i, -1), lo=self.index_of_offset)
+            by_bisect = bisect.bisect_left(self.offsets, (i, -1), lo=self.index_of_offset)
 
         if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
-          by_bisect -= 1
+            by_bisect -= 1
 
         num = i - self.offsets[by_bisect][0]
         count = self.offsets[by_bisect][1]
 
         if count > 100 and self.content_length < 1000:
-          content = list(self.content)
+            content = list(self.content)
         else:
-          content = self.content
+            content = self.content
 
         result = []
 
         if count == 0:
-          return ''
+            return ''
 
         for modulus in fastdivmod.divmod_iter(num, self.content_length):
-          result.append(content[modulus])
+            result.append(content[modulus])
 
         leftover = count - len(result)
         if leftover:
-          assert leftover > 0
-          result.extend([content[0]] * leftover)
+            assert leftover > 0
+            result.extend([content[0]] * leftover)
 
         # smallest place value ends up on the right
         return ''.join(result[::-1])
@@ -294,15 +294,15 @@ class RegexMembershipSequence(WrappedSequence):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         if not flags & re.DOTALL:
-          charset = ''.join(c for c in charset if c != '\n')
+            charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
 
         if flags & re.IGNORECASE:
-          raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+            raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
         elif flags & re.UNICODE:
-          raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
         elif flags & re.LOCALE:
-          raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
 
         if max_count is None:
             self.max_count = MAX_REPEAT_COUNT
