@@ -71,7 +71,6 @@ class WrappedSequence(object):
         self.length = raw.__len__()
 
     def get_item(self, i, d=None):
-        #print self.__class__.__name__, d
         if i < -self.length or i >= self.length:
             raise IndexError(i)
         if hasattr(self.raw, 'get_item'):
@@ -114,7 +113,6 @@ class SlicedSequence(WrappedSequence):
                        abs(self.steps))
 
     def get_item(self, i, d=None):
-        #print self.__class__.__name__, d
         j = i * self.steps + self.start
         return self.raw[j]
 
@@ -127,7 +125,6 @@ class ConcatenatedSequence(WrappedSequence):
         self.length = sum(a_len for _, a_len in self.list_lengths)
 
     def get_item(self, i, d=None):
-        #print self.__class__.__name__, d
         for a, a_len in self.list_lengths:
             if i < a_len:
                 return a[i]
@@ -148,14 +145,12 @@ class CombinatoricsSequence(WrappedSequence):
     """This uses all combinations of one item from each passed list."""
 
     def __init__(self, *components):
-        #print "Combin", components[:5]
         self.list_lengths = [(a, a.__len__()) for a in components]
         self.length = 1
         for _, c_len in self.list_lengths:
             self.length *= c_len
 
     def get_item(self, i, d=None):
-        #print self.__class__.__name__, d
         result = []
         for c, c_len in self.list_lengths:
             if hasattr(c, 'get_item'):
@@ -183,7 +178,6 @@ class RepetitiveSequence(WrappedSequence):
         self.length = sum(c for _, c in self.count_length)
 
     def get_item(self, i, d=None):
-        #print self.__class__.__name__, d
         """Finds out how many repeats this index implies, then picks strings."""
         for count, sublength in self.count_length:
             if i >= sublength:
@@ -201,22 +195,19 @@ class RepetitiveSequence(WrappedSequence):
         return '{repeat ' + repr(self.count_length) + '}'
 
 
-class WritingVisitor(WrappedSequence):
-    def __init__(self, parsed, keys):
-        #print "WritingVisitor", len(parsed), keys
-        self.keys = keys
-        super(WritingVisitor, self).__init__(parsed)
+class SaveCaptureGroup(WrappedSequence):
+    def __init__(self, parsed, key):
+        self.key = key
+        super(SaveCaptureGroup, self).__init__(parsed)
 
     def get_item(self, n, d=None):
-        rv = super(WritingVisitor, self).get_item(n, d)
+        rv = super(SaveCaptureGroup, self).get_item(n, d)
         if d is not None:
-            for k in self.keys:
-                d[k] = rv
-        #print "WritingVisitor return", rv, d
+            d[self.key] = rv
         return rv
 
 
-class ReadingVisitor(WrappedSequence):
+class ReadCaptureGroup(WrappedSequence):
     def __init__(self, n):
         self.num = n
         self.length = 1
@@ -225,7 +216,7 @@ class ReadingVisitor(WrappedSequence):
         if i != 0:
             raise IndexError(i)
         if d is None:
-            raise ValueError('ReadingVisitor with no dict')
+            raise ValueError('ReadCaptureGroup with no dict')
         return d.get(self.num, "fail")
 
 
@@ -262,9 +253,14 @@ class RegexMembershipSequence(WrappedSequence):
 
     def groupref(self, n):
         self.has_groupref = True
-        return ReadingVisitor(n)
+        return ReadCaptureGroup(n)
 
     def get_item(self, i, d=None):
+        """Typically only pass i.  d is an internal detail, for consistency with other classes.
+
+        If you care about the capture groups, you should use
+        RegexMembershipSequenceMatches instead, which returns a Match object
+        instead of a string."""
         if self.has_groupref or d is not None:
             if d is None:
                 d = {}
@@ -292,13 +288,9 @@ class RegexMembershipSequence(WrappedSequence):
         raise ParseError(repr(parsed))
 
     def maybe_save(self, group, parsed):
-        #print "MS", group, parsed
         rv = self.sub_values(parsed)
         if group is not None:
-            keys = [group]
-            if group in self.groupsave:
-                keys.append(self.groupsave[group])
-            rv = WritingVisitor(rv, keys)
+            rv = SaveCaptureGroup(rv, group)
         return rv
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
@@ -308,7 +300,7 @@ class RegexMembershipSequence(WrappedSequence):
             charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
 
-        self.groupsave = dict([(v, k) for (k, v) in self.matcher.groupindex.iteritems()])
+        self.named_group_lookup = self.matcher.groupindex
 
         if flags & re.IGNORECASE:
             raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
@@ -352,15 +344,57 @@ class RegexMembershipSequence(WrappedSequence):
         return self.matcher.match(item) is not None
 
 
-def Values(regex, flags=0, charset=CHARSET, max_count=None):
-    """Function wrapper that hides the class constructor details."""
+class RegexMembershipSequenceMatches(RegexMembershipSequence):
+    def __getitem__(self, n):
+        d = {}
+        s = super(RegexMembershipSequenceMatches, self).get_item(n, d)
+        return Match(s, d, self.named_group_lookup)
+
+
+def AllStrings(regex, flags=0, charset=CHARSET, max_count=None):
+    """Constructs an object that will generate all matching strings."""
     return RegexMembershipSequence(regex, flags, charset, max_count=max_count)
+
+Values = AllStrings
+
+
+class Match(object):
+    def __init__(self, string, groups, named_groups):
+        # TODO keep group(0) only, and spans for the rest.
+        self._string = string
+        self._groups = groups
+        self._named_groups = named_groups
+        self.lastindex = len(groups) + 1
+
+    def group(self, n=0):
+        if n == 0:
+            return self._string
+        if not isinstance(n, int):
+            n = self._named_groups[n]
+        return self._groups[n]
+
+    def groups(self):
+        return tuple(self._groups[i] for i in range(1, self.lastindex))
+
+    def groupdict(self):
+        d = {}
+        for k, v in self._named_groups.iteritems():
+            d[k] = self._groups[v]
+        return d
+
+    def span(self, n=0):
+        raise NotImplementedError()
+
+
+def AllMatches(regex, flags=0, charset=CHARSET, max_count=None):
+    """Constructs an object that will generate all matching strings."""
+    return RegexMembershipSequenceMatches(regex, flags, charset, max_count=max_count)
 
 
 def main(argv):
     """This module can be executed on the command line for testing."""
     for arg in argv[1:]:
-        for i in Values(arg):
+        for i in AllStrings(arg):
             print i
 
 

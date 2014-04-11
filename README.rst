@@ -17,7 +17,7 @@ to just split strings.
     ['foo', 'ba[rz]']
 
     >>> import sre_yield
-    >>> list(sre_yield.Values(s))  # better
+    >>> list(sre_yield.AllStrings(s))  # better
     ['foo', 'bar', 'baz']
 
 It does this by walking the tree as constructed by ``sre_parse`` (same thing
@@ -28,16 +28,16 @@ input string though -- these are cases that ``sre_parse`` did not optimize.
 .. code-block:: pycon
 
     >>> import sre_yield
-    >>> list(sre_yield.Values('.|a', charset='ab'))
+    >>> list(sre_yield.AllStrings('.|a', charset='ab'))
     ['a', 'b', 'a']
 
 ...and happens in simpler cases too:
 
 .. code-block:: pycon
 
-    >>> list(sre_yield.Values('a|a'))
+    >>> list(sre_yield.AllStrings('a|a'))
     ['a', 'a']
-    >>> list(sre_yield.Values('[aa]'))
+    >>> list(sre_yield.AllStrings('[aa]'))
     ['a', 'a']
 
 
@@ -59,7 +59,7 @@ Here's a quick example, using the presidents regex from http://xkcd.com/1313/
     >>> import re
     >>> re.search(s, 'kennedy') is not None  # note .search
     True
-    >>> v = sre_yield.Values(s)
+    >>> v = sre_yield.AllStrings(s)
     >>> v.__len__()
     23
     >>> 'bu' in v
@@ -73,7 +73,7 @@ number.
 
 .. code-block:: pycon
 
-    >>> v2 = sre_yield.Values('.{,30}(' + s + ').{,30}')
+    >>> v2 = sre_yield.AllStrings('.{,30}(' + s + ').{,30}')
     >>> v2.__len__()  # too big for int
     57220492262913872576843611006974799576789176661653180757625052079917448874638816841926032487457234703154759402702651149752815320219511292208238103L
     >>> 'kennedy' in v2
@@ -84,27 +84,31 @@ Capturing Groups
 ================
 
 If you're interested in extracting what would match during generation of a
-value, you can use get_item with the optional second parameter.
+value, you can use AllMatches instead to get Match objects.
 
 .. code-block:: pycon
 
-    >>> v = sre_yield.Values(r'a(\d)b')
-    >>> d = {}
-    >>> v.get_item(0, d)
+    >>> v = sre_yield.AllMatches(r'a(\d)b')
+    >>> m = v[0]
+    >>> m.group(0)
     'a0b'
-    >>> d
-    {1: '0'}
+    >>> m.group(1)
+    '0'
 
 This even works for simplistic backreferences, in this case to have matching quotes.
 
 .. code-block:: pycon
 
-    >>> v = sre_yield.Values(r'(["\'])([01]{3})\1')
-    >>> d = {}
-    >>> v.get_item(0, d)
+    >>> v = sre_yield.AllMatches(r'(["\'])([01]{3})\1')
+    >>> m = v[0]
+    >>> m.group(0)
     '"000"'
-    >>> d
-    {1: '"', 2: '000'}
+    >>> m.groups()
+    ('"', '000')
+    >>> m.group(1)
+    '"'
+    >>> m.group(2)
+    '000'
 
 
 Reporting Bugs, etc.
@@ -134,7 +138,7 @@ they handle repetitions:
 .. code-block:: pycon
 
     >>> import random
-    >>> v = sre_yield.Values('[abc]{1,4}')
+    >>> v = sre_yield.AllStrings('[abc]{1,4}')
     >>> len(v)
     120
 
@@ -187,7 +191,7 @@ other exceptions:
 
   .. code-block:: pycon
 
-      >>> len(sre_yield.Values('a*')[-1])
+      >>> len(sre_yield.AllStrings('a*')[-1])
       65535
       >>> import re
       >>> len(re.match('.*', 'a' * 100000).group(0))
@@ -202,5 +206,5 @@ other exceptions:
 
   .. code-block:: pycon
 
-      >>> list(sre_yield.Values('foo$'))
+      >>> list(sre_yield.AllStrings('foo$'))
       []

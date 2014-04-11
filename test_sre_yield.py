@@ -136,12 +136,11 @@ class YieldTest(unittest.TestCase):
         self.assertEquals('a', d[2])
 
     def testSavingGroupsByName(self):
-        parsed = sre_yield.Values(r'x(?P<foo>[abc])x')
-        d = {}
-        self.assertEquals('xax', parsed.get_item(0, d))
-        self.assertEquals('a', d[1])
-        self.assertEquals('a', d['foo'])
-
+        parsed = sre_yield.AllMatches(r'x(?P<foo>[abc])x')
+        m = parsed[0]
+        self.assertEquals('xax', m.group(0))
+        self.assertEquals('a', m.group(1))
+        self.assertEquals('a', m.group('foo'))
 
     def testBackrefCounts(self):
         parsed = sre_yield.Values(r'([abc])-\1')
