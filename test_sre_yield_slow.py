@@ -23,7 +23,7 @@ class SlowYieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 
     def testDotStarCase(self):
-        test_size = sre_yield.Values('.*', re.DOTALL).__len__()
+        test_size = sre_yield.AllStrings('.*', re.DOTALL).__len__()
         actual_size = 0
         for _ in xrange(65536):
             actual_size = actual_size * 256 + 1

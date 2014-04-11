@@ -40,7 +40,7 @@ CHARSET = [chr(c) for c in xrange(256)]
 WORD = string.letters + string.digits + '_'
 
 def Not(chars):
-  return ''.join(sorted(set(CHARSET) - set(chars)))
+    return ''.join(sorted(set(CHARSET) - set(chars)))
 
 
 CATEGORIES = {
@@ -70,7 +70,11 @@ class WrappedSequence(object):
         # to convert the returned number from a long-int to an ordinary int.
         self.length = raw.__len__()
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
+        if i < -self.length or i >= self.length:
+            raise IndexError(i)
+        if hasattr(self.raw, 'get_item'):
+            return self.raw.get_item(i, d)
         return self.raw[i]
 
     def __len__(self):
@@ -108,7 +112,7 @@ class SlicedSequence(WrappedSequence):
         self.length = ((self.stop - self.start + abs(self.steps) - 1) /
                        abs(self.steps))
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
         j = i * self.steps + self.start
         return self.raw[j]
 
@@ -120,7 +124,7 @@ class ConcatenatedSequence(WrappedSequence):
         self.list_lengths = [(a, a.__len__()) for a in alternatives]
         self.length = sum(a_len for _, a_len in self.list_lengths)
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
         for a, a_len in self.list_lengths:
             if i < a_len:
                 return a[i]
@@ -146,10 +150,13 @@ class CombinatoricsSequence(WrappedSequence):
         for _, c_len in self.list_lengths:
             self.length *= c_len
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
         result = []
         for c, c_len in self.list_lengths:
-            result.append(c[i % c_len])
+            if hasattr(c, 'get_item'):
+                result.append(c.get_item(i % c_len, d))
+            else:
+                result.append(c[i % c_len])
             i //= c_len
         return ''.join(result)
 
@@ -170,7 +177,7 @@ class RepetitiveSequence(WrappedSequence):
             sublength *= self.content_length
         self.length = sum(c for _, c in self.count_length)
 
-    def get_item(self, i):
+    def get_item(self, i, d=None):
         """Finds out how many repeats this index implies, then picks strings."""
         for count, sublength in self.count_length:
             if i >= sublength:
@@ -186,6 +193,31 @@ class RepetitiveSequence(WrappedSequence):
 
     def __repr__(self):
         return '{repeat ' + repr(self.count_length) + '}'
+
+
+class SaveCaptureGroup(WrappedSequence):
+    def __init__(self, parsed, key):
+        self.key = key
+        super(SaveCaptureGroup, self).__init__(parsed)
+
+    def get_item(self, n, d=None):
+        rv = super(SaveCaptureGroup, self).get_item(n, d)
+        if d is not None:
+            d[self.key] = rv
+        return rv
+
+
+class ReadCaptureGroup(WrappedSequence):
+    def __init__(self, n):
+        self.num = n
+        self.length = 1
+
+    def get_item(self, i, d=None):
+        if i != 0:
+            raise IndexError(i)
+        if d is None:
+            raise ValueError('ReadCaptureGroup with no dict')
+        return d.get(self.num, "fail")
 
 
 class RegexMembershipSequence(WrappedSequence):
@@ -219,6 +251,23 @@ class RegexMembershipSequence(WrappedSequence):
     def category(self, y):
         return CATEGORIES[y]
 
+    def groupref(self, n):
+        self.has_groupref = True
+        return ReadCaptureGroup(n)
+
+    def get_item(self, i, d=None):
+        """Typically only pass i.  d is an internal detail, for consistency with other classes.
+
+        If you care about the capture groups, you should use
+        RegexMembershipSequenceMatches instead, which returns a Match object
+        instead of a string."""
+        if self.has_groupref or d is not None:
+            if d is None:
+                d = {}
+            return super(RegexMembershipSequence, self).get_item(i, d)
+        else:
+            return super(RegexMembershipSequence, self).get_item(i)
+
     def sub_values(self, parsed):
         """This knows how to convert one piece of parsed pattern."""
         # If this is a subpattern object, we just want its data
@@ -236,32 +285,42 @@ class RegexMembershipSequence(WrappedSequence):
             if matcher in self.backends:
                 return self.backends[matcher](*arguments)
         # No idea what to do here
-        return ['<<<%s>>>' % repr(parsed)]
+        raise ParseError(repr(parsed))
+
+    def maybe_save(self, group, parsed):
+        rv = self.sub_values(parsed)
+        if group is not None:
+            rv = SaveCaptureGroup(rv, group)
+        return rv
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
         if not flags & re.DOTALL:
-          charset = ''.join(c for c in charset if c != '\n')
+            charset = ''.join(c for c in charset if c != '\n')
         self.charset = charset
 
+        self.named_group_lookup = self.matcher.groupindex
+
         if flags & re.IGNORECASE:
-          raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+            raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
         elif flags & re.UNICODE:
-          raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
         elif flags & re.LOCALE:
-          raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
 
         if max_count is None:
             self.max_count = MAX_REPEAT_COUNT
         else:
             self.max_count = max_count
 
+        self.has_groupref = False
+
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
             sre_constants.RANGE: lambda l, h: [chr(c) for c in xrange(l, h+1)],
-            sre_constants.SUBPATTERN: lambda _, items: self.sub_values(items),
+            sre_constants.SUBPATTERN: self.maybe_save,
             sre_constants.BRANCH: self.branch_values,
             sre_constants.MIN_REPEAT: self.max_repeat_values,
             sre_constants.MAX_REPEAT: self.max_repeat_values,
@@ -273,6 +332,7 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.IN: self.in_values,
             sre_constants.NOT_LITERAL: self.not_literal,
             sre_constants.CATEGORY: self.category,
+            sre_constants.GROUPREF: self.groupref,
         }
         # Now build a generator that knows all possible patterns
         self.raw = self.sub_values(sre_parse.parse(pattern, flags))
@@ -284,15 +344,57 @@ class RegexMembershipSequence(WrappedSequence):
         return self.matcher.match(item) is not None
 
 
-def Values(regex, flags=0, charset=CHARSET, max_count=None):
-    """Function wrapper that hides the class constructor details."""
+class RegexMembershipSequenceMatches(RegexMembershipSequence):
+    def __getitem__(self, n):
+        d = {}
+        s = super(RegexMembershipSequenceMatches, self).get_item(n, d)
+        return Match(s, d, self.named_group_lookup)
+
+
+def AllStrings(regex, flags=0, charset=CHARSET, max_count=None):
+    """Constructs an object that will generate all matching strings."""
     return RegexMembershipSequence(regex, flags, charset, max_count=max_count)
+
+Values = AllStrings
+
+
+class Match(object):
+    def __init__(self, string, groups, named_groups):
+        # TODO keep group(0) only, and spans for the rest.
+        self._string = string
+        self._groups = groups
+        self._named_groups = named_groups
+        self.lastindex = len(groups) + 1
+
+    def group(self, n=0):
+        if n == 0:
+            return self._string
+        if not isinstance(n, int):
+            n = self._named_groups[n]
+        return self._groups[n]
+
+    def groups(self):
+        return tuple(self._groups[i] for i in range(1, self.lastindex))
+
+    def groupdict(self):
+        d = {}
+        for k, v in self._named_groups.iteritems():
+            d[k] = self._groups[v]
+        return d
+
+    def span(self, n=0):
+        raise NotImplementedError()
+
+
+def AllMatches(regex, flags=0, charset=CHARSET, max_count=None):
+    """Constructs an object that will generate all matching strings."""
+    return RegexMembershipSequenceMatches(regex, flags, charset, max_count=max_count)
 
 
 def main(argv):
     """This module can be executed on the command line for testing."""
     for arg in argv[1:]:
-        for i in Values(arg):
+        for i in AllStrings(arg):
             print i
 
 
