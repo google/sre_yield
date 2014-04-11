@@ -24,41 +24,41 @@ class YieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 
     def testSimpleCases(self):
-        self.assertSequenceEqual(sre_yield.Values('1(234?|49?)'),
+        self.assertSequenceEqual(sre_yield.AllStrings('1(234?|49?)'),
                                  ['123', '1234', '14', '149'])
-        self.assertSequenceEqual(sre_yield.Values('asd|def'),
+        self.assertSequenceEqual(sre_yield.AllStrings('asd|def'),
                                  ['asd', 'def'])
-        self.assertSequenceEqual(sre_yield.Values('asd|def\\+|a\\.b\\.c'),
+        self.assertSequenceEqual(sre_yield.AllStrings('asd|def\\+|a\\.b\\.c'),
                                  ['asd', 'def+', 'a.b.c'])
 
     def testOtherCases(self):
-        self.assertSequenceEqual(sre_yield.Values('[aeiou]'), list('aeiou'))
-        self.assertEquals(len(sre_yield.Values('1.3', flags=re.DOTALL)), 256)
-        v = sre_yield.Values('[^-]3[._]1415', flags=re.DOTALL)
+        self.assertSequenceEqual(sre_yield.AllStrings('[aeiou]'), list('aeiou'))
+        self.assertEquals(len(sre_yield.AllStrings('1.3', flags=re.DOTALL)), 256)
+        v = sre_yield.AllStrings('[^-]3[._]1415', flags=re.DOTALL)
         print list(v)
         self.assertEquals(len(v), 510)
-        self.assertEquals(len(sre_yield.Values('(.|5[6-9]|[6-9][0-9])[a-z].?',
+        self.assertEquals(len(sre_yield.AllStrings('(.|5[6-9]|[6-9][0-9])[a-z].?',
                                                flags=re.DOTALL)),
                           300 * 26 * 257)
-        self.assertEquals(len(sre_yield.Values('..', charset='0123456789')),
+        self.assertEquals(len(sre_yield.AllStrings('..', charset='0123456789')),
                           100)
-        self.assertEquals(len(sre_yield.Values('0*')), 65536)
+        self.assertEquals(len(sre_yield.AllStrings('0*')), 65536)
         # For really big lists, we can't use the len() function any more
-        self.assertEquals(sre_yield.Values('0*').__len__(), 65536)
-        self.assertEquals(sre_yield.Values('[01]*').__len__(), 2 ** 65536 - 1)
+        self.assertEquals(sre_yield.AllStrings('0*').__len__(), 65536)
+        self.assertEquals(sre_yield.AllStrings('[01]*').__len__(), 2 ** 65536 - 1)
 
     def testAlternationWithEmptyElement(self):
-        self.assertSequenceEqual(sre_yield.Values('a(b|c|)'),
+        self.assertSequenceEqual(sre_yield.AllStrings('a(b|c|)'),
                                  ['ab', 'ac', 'a'])
-        self.assertSequenceEqual(sre_yield.Values('a(|b|c)'),
+        self.assertSequenceEqual(sre_yield.AllStrings('a(|b|c)'),
                                  ['a', 'ab', 'ac'])
-        self.assertSequenceEqual(sre_yield.Values('a[bc]?'),
+        self.assertSequenceEqual(sre_yield.AllStrings('a[bc]?'),
                                  ['a', 'ab', 'ac'])
-        self.assertSequenceEqual(sre_yield.Values('a[bc]??'),
+        self.assertSequenceEqual(sre_yield.AllStrings('a[bc]??'),
                                  ['a', 'ab', 'ac'])
 
     def testSlices(self):
-        parsed = sre_yield.Values('[abcdef]')
+        parsed = sre_yield.AllStrings('[abcdef]')
         self.assertSequenceEqual(parsed[::2], list('ace'))
         self.assertSequenceEqual(parsed[1::2], list('bdf'))
         self.assertSequenceEqual(parsed[1:-1], list('bcde'))
@@ -71,7 +71,7 @@ class YieldTest(unittest.TestCase):
         self.assertEquals(parsed[-1], 'f')
 
     def testGetItemNegative(self):
-        parsed = sre_yield.Values('x|[a-z]{1,5}')
+        parsed = sre_yield.AllStrings('x|[a-z]{1,5}')
         self.assertEquals(parsed[0], 'x')
         self.assertEquals(parsed[1], 'a')
         self.assertEquals(parsed[23], 'w')
@@ -92,12 +92,12 @@ class YieldTest(unittest.TestCase):
         self.assertRaises(IndexError, parsed.get_item, -len(parsed)-1)
 
     def testContains(self):
-        parsed = sre_yield.Values('[01]+')
+        parsed = sre_yield.AllStrings('[01]+')
         self.assertTrue('0101' in parsed)
         self.assertFalse('0201' in parsed)
 
     def testNaturalOrder(self):
-        parsed = sre_yield.Values('[0-9]{2}')
+        parsed = sre_yield.AllStrings('[0-9]{2}')
         self.assertEquals(parsed[0], '00')
         self.assertEquals(parsed[1], '01')
         self.assertEquals(parsed[98], '98')
@@ -110,26 +110,26 @@ class YieldTest(unittest.TestCase):
             r = re.compile('\\' + c)
             matching = [i for i in all_ascii if r.match(i)]
             self.assertGreater(len(matching), 5)
-            parsed = sre_yield.Values('\\' + c)
+            parsed = sre_yield.AllStrings('\\' + c)
             self.assertEquals(sorted(matching), sorted(parsed[:]))
 
     def testDotallFlag(self):
-        parsed = sre_yield.Values('.', charset='abc\n')
+        parsed = sre_yield.AllStrings('.', charset='abc\n')
         self.assertEquals(['a', 'b', 'c'], parsed[:])
-        parsed = sre_yield.Values('.', charset='abc\n', flags=re.DOTALL)
+        parsed = sre_yield.AllStrings('.', charset='abc\n', flags=re.DOTALL)
         self.assertEquals(['a', 'b', 'c', '\n'], parsed[:])
 
     def testMaxCount(self):
-        parsed = sre_yield.Values('[01]+', max_count=4)
+        parsed = sre_yield.AllStrings('[01]+', max_count=4)
         self.assertEquals('1111', parsed[-1])
 
     def testParseErrors(self):
-        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.I)
-        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.U)
-        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a', re.L)
+        self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, 'a', re.I)
+        self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, 'a', re.U)
+        self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, 'a', re.L)
 
     def testSavingGroups(self):
-        parsed = sre_yield.Values(r'(([abc])d)e')
+        parsed = sre_yield.AllStrings(r'(([abc])d)e')
         d = {}
         self.assertEquals('ade', parsed.get_item(0, d))
         self.assertEquals('ad', d[1])
@@ -143,9 +143,12 @@ class YieldTest(unittest.TestCase):
         self.assertEquals('a', m.group('foo'))
 
     def testBackrefCounts(self):
-        parsed = sre_yield.Values(r'([abc])-\1')
+        parsed = sre_yield.AllStrings(r'([abc])-\1')
         self.assertEquals(3, len(parsed))
         self.assertEquals(['a-a', 'b-b', 'c-c'], parsed[:])
+
+    def testAllStringsIsValues(self):
+        self.assertEquals(sre_yield.AllStrings, sre_yield.Values)
 
 
 
