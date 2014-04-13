@@ -147,6 +147,11 @@ class YieldTest(unittest.TestCase):
         self.assertEquals(3, len(parsed))
         self.assertEquals(['a-a', 'b-b', 'c-c'], parsed[:])
 
+    def testSlicingMatches(self):
+        parsed = sre_yield.AllMatches(r'([abc])-\1')
+        self.assertEquals(3, len(parsed))
+        self.assertEquals(['a-a', 'b-b'], [x.group(0) for x in parsed[:2]])
+
     def testAllStringsIsValues(self):
         self.assertEquals(sre_yield.AllStrings, sre_yield.Values)
 

@@ -397,9 +397,16 @@ class RegexMembershipSequence(WrappedSequence):
 
 
 class RegexMembershipSequenceMatches(RegexMembershipSequence):
-    def __getitem__(self, n):
+    def __getitem__(self, i):
+        if isinstance(i, types.SliceType):
+            result = SlicedSequence(self, slicer=i)
+            if result.__len__() < 16:
+                # Short lists are unpacked
+                result = [item for item in result]
+            return result
+
         d = {}
-        s = super(RegexMembershipSequenceMatches, self).get_item(n, d)
+        s = super(RegexMembershipSequenceMatches, self).get_item(i, d)
         return Match(s, d, self.named_group_lookup)
 
 
