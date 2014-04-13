@@ -24,6 +24,8 @@ then the data structure is executed to form a bunch of iterators.
 
 __author__ = 'alexperry@google.com (Alex Perry)'
 
+import bisect
+import math
 import re
 import sre_constants
 import sre_parse
@@ -31,6 +33,8 @@ import string
 import sys
 import types
 
+import cachingseq
+import fastdivmod
 
 _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
@@ -152,12 +156,21 @@ class CombinatoricsSequence(WrappedSequence):
 
     def get_item(self, i, d=None):
         result = []
+        if i < 0:
+            i += self.length
+        assert i >= 0
+        assert i < self.length
+
+        if len(self.list_lengths) == 1:
+            # skip unnecessary ''.join -- big speedup
+            return self.list_lengths[0][0][i]
+
         for c, c_len in self.list_lengths:
+            i, mod = divmod(i, c_len)
             if hasattr(c, 'get_item'):
-                result.append(c.get_item(i % c_len, d))
+                result.append(c.get_item(mod, d))
             else:
-                result.append(c[i % c_len])
-            i //= c_len
+                result.append(c[mod])
         return ''.join(result)
 
     def __repr__(self):
@@ -170,29 +183,68 @@ class RepetitiveSequence(WrappedSequence):
     def __init__(self, content, lowest=1, highest=1):
         self.content = content
         self.content_length = content.__len__()
-        sublength = self.content_length ** lowest
-        self.count_length = []
-        for count in xrange(lowest, highest + 1):
-            self.count_length.append((count, sublength))
-            sublength *= self.content_length
-        self.length = sum(c for _, c in self.count_length)
+        self.length = fastdivmod.powersum(self.content_length, lowest, highest)
+        self.lowest = lowest
+        self.highest = highest
+
+        def arbitrary_entry(i):
+            return (fastdivmod.powersum(self.content_length, lowest, i+lowest-1), i+lowest)
+
+        def entry_from_prev(i, prev):
+            return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
+
+        self.offsets = cachingseq.CachingFuncSequence(
+            arbitrary_entry, highest - lowest+1, entry_from_prev)
+        # This needs to be a constant in order to reuse caclulations in future
+        # calls to bisect (a moving target will produce more misses).
+        if self.offsets[-1][0] > sys.maxint:
+            i = 0
+            while i + 2 < len(self.offsets):
+                if self.offsets[i+1][0] > sys.maxint:
+                    self.index_of_offset = i
+                    self.offset_break = self.offsets[i][0]
+                    break
+                i += 1
+        else:
+            self.index_of_offset = len(self.offsets)
+            self.offset_break = sys.maxint
 
     def get_item(self, i, d=None):
         """Finds out how many repeats this index implies, then picks strings."""
-        for count, sublength in self.count_length:
-            if i >= sublength:
-                i -= sublength
-                continue
-            result = []
-            for _ in xrange(count):
-                result.append(self.content[i % self.content_length])
-                i //= self.content_length
-            # smallest place value ends up on the right
-            return ''.join(result[::-1])
-        raise IndexError('Too Big')
+        if i < self.offset_break:
+            by_bisect = bisect.bisect_left(self.offsets, (i, -1), hi=self.index_of_offset)
+        else:
+            by_bisect = bisect.bisect_left(self.offsets, (i, -1), lo=self.index_of_offset)
+
+        if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
+            by_bisect -= 1
+
+        num = i - self.offsets[by_bisect][0]
+        count = self.offsets[by_bisect][1]
+
+        if count > 100 and self.content_length < 1000:
+            content = list(self.content)
+        else:
+            content = self.content
+
+        result = []
+
+        if count == 0:
+            return ''
+
+        for modulus in fastdivmod.divmod_iter(num, self.content_length):
+            result.append(content[modulus])
+
+        leftover = count - len(result)
+        if leftover:
+            assert leftover > 0
+            result.extend([content[0]] * leftover)
+
+        # smallest place value ends up on the right
+        return ''.join(result[::-1])
 
     def __repr__(self):
-        return '{repeat ' + repr(self.count_length) + '}'
+        return '{repeat base=%d low=%d high=%d}' % (self.content_length, self.lowest, self.highest)
 
 
 class SaveCaptureGroup(WrappedSequence):
