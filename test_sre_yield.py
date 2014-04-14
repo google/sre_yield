@@ -162,6 +162,11 @@ class YieldTest(unittest.TestCase):
         self.assertEquals('\x00', it.next())
         self.assertEquals('\x01', it.next())
 
+    def testCanSliceGiantValues(self):
+        v = sre_yield.AllStrings('.+')
+        self.assertGreater(v.__len__(), sys.maxint)
+        self.assertEquals(['\x00', '\x01'], list(v[:2]))
+
 
 if __name__ == '__main__':
     unittest.main()

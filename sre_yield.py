@@ -103,7 +103,7 @@ def _adjust_index(n, size):
     if n < 0:
         raise IndexError("Out of range")
     if n > size:
-        raise IndexError("Out of range")
+        n = size
     return n
 
 
@@ -189,7 +189,7 @@ class SlicedSequence(WrappedSequence):
         if slicer is None:
             self.start, self.stop, self.step = 0, raw.__len__(), 1
         else:
-            self.start, self.stop, self.step = slicer.indices(raw.__len__())
+            self.start, self.stop, self.step = slice_indices(slicer, raw.__len__())
 
         # Integer round up, depending on step direction
         self.length = ((self.stop - self.start + self.step - _sign(self.step)) /
