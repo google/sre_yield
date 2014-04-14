@@ -23,6 +23,8 @@ then the data structure is executed to form a bunch of iterators.
 """
 
 __author__ = 'alexperry@google.com (Alex Perry)'
+__all__ = ['Values', 'AllStrings', 'AllMatches', 'ParseError']
+
 
 import bisect
 import math
@@ -64,6 +66,47 @@ class ParseError(Exception):
     pass
 
 
+def slice_indices(slice_obj, size):
+    """slice_obj.indices() except this one supports longs."""
+    # start stop step
+    start = slice_obj.start
+    stop = slice_obj.stop
+    step = slice_obj.step
+
+    # We don't always update a value for negative indices (if we wrote it here
+    # due to None).
+    if step is None:
+        step = 1
+    if start is None:
+        if step > 0:
+            start = 0
+        else:
+            start = size - 1
+    else:
+        start = _adjust_index(start, size)
+
+    if stop is None:
+        if step > 0:
+            stop = size
+        else:
+            stop = -1
+    else:
+        stop = _adjust_index(stop, size)
+
+    return (start, stop, step)
+
+
+def _adjust_index(n, size):
+    if n < 0:
+        n += size
+
+    if n < 0:
+        raise IndexError("Out of range")
+    if n > size:
+        raise IndexError("Out of range")
+    return n
+
+
 class WrappedSequence(object):
     """This wraps a sequence, purely as a base clase for the other uses."""
 
@@ -75,8 +118,7 @@ class WrappedSequence(object):
         self.length = raw.__len__()
 
     def get_item(self, i, d=None):
-        if i < -self.length or i >= self.length:
-            raise IndexError(i)
+        i = _adjust_index(i, self.length)
         if hasattr(self.raw, 'get_item'):
             return self.raw.get_item(i, d)
         return self.raw[i]
@@ -92,14 +134,20 @@ class WrappedSequence(object):
                 # Short lists are unpacked
                 result = [item for item in result]
             return result
-        if i < -self.length or i >= self.length:
-            raise IndexError('Index %i vs length %i' % (i, self.length))
+        i = _adjust_index(i, self.length)
         # Usually we just call the user-provided function
         return self.get_item(i)
 
     def __iter__(self):
         for i in xrange(self.length):
             yield self.get_item(i)
+
+
+def _sign(x):
+    if x > 0:
+        return 1
+    else:
+        return -1
 
 
 class SlicedSequence(WrappedSequence):
@@ -109,15 +157,16 @@ class SlicedSequence(WrappedSequence):
         # Derived classes will likely override this constructor
         self.raw = raw
         if slicer is None:
-            self.start, self.stop, self.steps = 0, raw.__len__(), 1
+            self.start, self.stop, self.step = 0, raw.__len__(), 1
         else:
-            self.start, self.stop, self.steps = slicer.indices(raw.__len__())
-        # integer round up
-        self.length = ((self.stop - self.start + abs(self.steps) - 1) /
-                       abs(self.steps))
+            self.start, self.stop, self.step = slicer.indices(raw.__len__())
+
+        # Integer round up, depending on step direction
+        self.length = ((self.stop - self.start + self.step - _sign(self.step)) /
+                       self.step)
 
     def get_item(self, i, d=None):
-        j = i * self.steps + self.start
+        j = i * self.step + self.start
         return self.raw[j]
 
 
@@ -158,8 +207,8 @@ class CombinatoricsSequence(WrappedSequence):
         result = []
         if i < 0:
             i += self.length
-        assert i >= 0
-        assert i < self.length
+        if i < 0 or i >= self.length:
+            raise IndexError("Index %d out of bounds" % (i,))
 
         if len(self.list_lengths) == 1:
             # skip unnecessary ''.join -- big speedup
