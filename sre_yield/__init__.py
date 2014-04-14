@@ -35,8 +35,8 @@ import string
 import sys
 import types
 
-import cachingseq
-import fastdivmod
+from sre_yield import cachingseq
+from sre_yield import fastdivmod
 
 _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
@@ -529,12 +529,14 @@ def AllMatches(regex, flags=0, charset=CHARSET, max_count=None):
     return RegexMembershipSequenceMatches(regex, flags, charset, max_count=max_count)
 
 
-def main(argv):
+def main(argv=None):
     """This module can be executed on the command line for testing."""
+    if argv is None:
+        argv = sys.argv
     for arg in argv[1:]:
         for i in AllStrings(arg):
             print i
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

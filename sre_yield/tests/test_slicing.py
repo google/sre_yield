@@ -19,6 +19,7 @@ import unittest
 
 import sre_yield
 
+
 class ExtractSliceType(object):
     """
     This exists so we can index obj[a:b:c] and get back a slice type without

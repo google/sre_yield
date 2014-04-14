@@ -20,6 +20,7 @@ import unittest
 
 import sre_yield
 
+
 class YieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 

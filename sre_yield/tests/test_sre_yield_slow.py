@@ -19,6 +19,7 @@ import unittest
 
 import sre_yield
 
+
 class SlowYieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 

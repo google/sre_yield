@@ -1,2 +1,5 @@
 *.py[co]
 .*.sw?
+*.egg-info
+build
+dist

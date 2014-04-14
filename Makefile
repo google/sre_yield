@@ -32,4 +32,4 @@ pygments.css:
 
 .PHONY: bench
 bench:
-	PYTHON=$(PYTHON) ./bench.sh
+	PYTHON=$(PYTHON) ./benchmarks/bench.sh

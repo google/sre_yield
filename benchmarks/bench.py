@@ -5,7 +5,9 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.getcwd())
+t = os.path.dirname(sys.argv[0])
+root = os.path.abspath(os.path.join(t, '..'))
+sys.path.insert(0, root)
 
 import sre_yield
 
@@ -29,20 +31,7 @@ def main(args):
     pattern = args[0]
     sys.stdout.write("%s\t" % (pattern,)); sys.stdout.flush()
 
-    if len(args) > 1:
-        name = args[1]
-    else:
-        path = sre_yield.__file__
-        if '/' not in path:
-            path = os.getcwd()
-        path = os.path.dirname(path)
-
-        if path.endswith('_vanilla'):
-            name = "old"
-        elif path.endswith('_thatch'):
-            name = "new"
-        else:
-            raise ValueError("Unknown path", path)
+    name = args[1]
 
     sys.stdout.write("%s\t" % (name,)); sys.stdout.flush()
 
