@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import re
+import sys
 import unittest
-import re
 
 import sre_yield
 
@@ -155,6 +155,12 @@ class YieldTest(unittest.TestCase):
     def testAllStringsIsValues(self):
         self.assertEquals(sre_yield.AllStrings, sre_yield.Values)
 
+    def testCanIterateGiantValues(self):
+        v = sre_yield.AllStrings('.+')
+        self.assertGreater(v.__len__(), sys.maxint)
+        it = iter(v)
+        self.assertEquals('\x00', it.next())
+        self.assertEquals('\x01', it.next())
 
 
 if __name__ == '__main__':

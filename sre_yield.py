@@ -107,6 +107,36 @@ def _adjust_index(n, size):
     return n
 
 
+def _xrange(*args):
+    """Because xrange doesn't support longs :("""
+    # prefer real xrange if it works
+    try:
+        return xrange(*args)
+    except OverflowError:
+        return _bigrange(*args)
+
+
+def _bigrange(*args):
+    if len(args) == 1:
+        start = 0; stop = args[0]; step = 1
+    elif len(args) == 2:
+        start, stop = args
+        step = 1
+    elif len(args) == 3:
+        start, stop, step = args
+    else:
+        raise ValueError("Too many args for _bigrange")
+
+    i = start
+    while True:
+        yield i
+        i += step
+        if step < 0 and i <= stop:
+            break
+        if step > 0 and i >= stop:
+            break
+
+
 class WrappedSequence(object):
     """This wraps a sequence, purely as a base clase for the other uses."""
 
@@ -139,7 +169,7 @@ class WrappedSequence(object):
         return self.get_item(i)
 
     def __iter__(self):
-        for i in xrange(self.length):
+        for i in _xrange(self.length):
             yield self.get_item(i)
 
 
