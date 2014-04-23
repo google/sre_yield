@@ -71,6 +71,12 @@ class YieldTest(unittest.TestCase):
         self.assertEquals(parsed[-2], 'e')
         self.assertEquals(parsed[-1], 'f')
 
+    def testSlicesRepeated(self):
+        parsed = sre_yield.AllStrings('[abcdef]')
+        self.assertSequenceEqual(parsed[::-1][:2], list('fe'))
+        self.assertSequenceEqual(parsed[1:][1:][1:-1], list('de'))
+        self.assertSequenceEqual(parsed[::2][1:], list('ce'))
+
     def testGetItemNegative(self):
         parsed = sre_yield.AllStrings('x|[a-z]{1,5}')
         self.assertEquals(parsed[0], 'x')
