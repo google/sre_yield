@@ -114,8 +114,8 @@ This even works for simplistic backreferences, in this case to have matching quo
 Reporting Bugs, etc.
 ====================
 
-We welcome bug reports -- see our issue tracker on `Google Code
-<https://code.google.com/p/sre-yield/>`_ to see if it's been reported before.
+We welcome bug reports -- see our issue tracker on `GitHub
+<https://github.com/google/sre_yield/issues>`_ to see if it's been reported before.
 If you'd like to discuss anything, we have a `Google Group
 <https://groups.google.com/group/sre_yield>`_ as well.
 

@@ -434,11 +434,11 @@ class RegexMembershipSequence(WrappedSequence):
         self.named_group_lookup = self.matcher.groupindex
 
         if flags & re.IGNORECASE:
-            raise ParseError('Flag "i" not supported. https://code.google.com/p/sre-yield/issues/detail?id=7')
+            raise ParseError('Flag "i" not supported. https://github.com/google/sre_yield/issues/4')
         elif flags & re.UNICODE:
-            raise ParseError('Flag "u" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "u" not supported. https://github.com/google/sre_yield/issues/3')
         elif flags & re.LOCALE:
-            raise ParseError('Flag "l" not supported. https://code.google.com/p/sre-yield/issues/detail?id=8')
+            raise ParseError('Flag "l" not supported. https://github.com/google/sre_yield/issues/5')
 
         if max_count is None:
             self.max_count = MAX_REPEAT_COUNT
