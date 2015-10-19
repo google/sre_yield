@@ -45,6 +45,8 @@ CHARSET = [chr(c) for c in xrange(256)]
 
 WORD = string.letters + string.digits + '_'
 
+STATE_START, STATE_MIDDLE, STATE_END = range(3)
+
 def Not(chars):
     return ''.join(sorted(set(CHARSET) - set(chars)))
 
@@ -357,6 +359,9 @@ class RegexMembershipSequence(WrappedSequence):
     def empty_list(self, *_):
         return []
 
+    def nothing_added(self, *_):
+        return ['']
+
     def branch_values(self, _, items):
         """Converts SRE parser data into literals and merges those lists."""
         return ConcatenatedSequence(
@@ -414,6 +419,7 @@ class RegexMembershipSequence(WrappedSequence):
             if not isinstance(arguments, tuple):
                 arguments = (arguments,)
             if matcher in self.backends:
+                self.check_anchor_state(matcher, arguments)
                 return self.backends[matcher](*arguments)
         # No idea what to do here
         raise ParseError(repr(parsed))
@@ -423,6 +429,51 @@ class RegexMembershipSequence(WrappedSequence):
         if group is not None:
             rv = SaveCaptureGroup(rv, group)
         return rv
+
+    def check_anchor_state(self, matcher, arguments):
+        # A bit of a hack to support zero-width leading anchors.  The goal is
+        # that /^(a|b)$/ will match properly, and that /a^b/ or /a\bb/ throws
+        # an error.  (It's unfortunate that I couldn't easily handle /$^/ which
+        # matches the empty string; I went for the common case.)
+        #
+        # There are three states, for example:
+        # / STATE_START
+        # | / STATE_START (^ causes no transition here, but is illegal at STATE_MIDDLE or STATE_END)
+        # | |  / STATE_START (\b causes no transition here, but advances MIDDLE to END)
+        # | |  | / (same as above for ^)
+        # | |  | | / STATE_MIDDLE (anything besides ^ and \b advances START to MIDDLE)
+        # | |  | | | / still STATE_MIDDLE
+        # . .  . . . .  / advances MIDDLE to END
+        #  ^ \b ^ X Y \b $
+        old_state = self.state
+        if self.state == STATE_START:
+            if matcher == 'at':
+                if arguments[0] in (sre_constants.AT_END, sre_constants.AT_END_STRING):
+                    self.state = STATE_END
+                elif arguments[0] == sre_constants.AT_NON_BOUNDARY:
+                    # This is nonsensical at beginning of string
+                    raise ParseError('Anchor %r found at START state' % (arguments[0],))
+                # All others (AT_BEGINNING, AT_BEGINNING_STRING, and AT_BOUNDARY) remain in START.
+            elif matcher != 'subpattern':
+                self.state = STATE_MIDDLE
+            # subpattern remains in START
+        elif self.state == STATE_END:
+            if matcher == 'at':
+                if arguments[0] not in (
+                    sre_constants.AT_END, sre_constants.AT_END_STRING,
+                    sre_constants.AT_BOUNDARY):
+                    raise ParseError('Anchor %r found at END state' % (arguments[0],))
+                # those three remain in END
+            elif matcher != 'subpattern':
+                raise ParseError('Non-end-anchor %r found at END state' % (arguments[0],))
+            # subpattern remains in END
+        else:  # self.state == STATE_MIDDLE
+            if matcher == 'at':
+                if arguments[0] in (
+                    sre_constants.AT_BEGINNING, sre_constants.AT_BEGINNING_STRING):
+                    raise ParseError('Anchor %r found at MIDDLE state' % (arguments[0],))
+                # All others (AT_END, AT_END_STRING, AT_BOUNDARY) advance to END.
+                self.state = STATE_END
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
@@ -455,7 +506,7 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.BRANCH: self.branch_values,
             sre_constants.MIN_REPEAT: self.max_repeat_values,
             sre_constants.MAX_REPEAT: self.max_repeat_values,
-            sre_constants.AT: self.empty_list,
+            sre_constants.AT: self.nothing_added,
             sre_constants.ASSERT: self.empty_list,
             sre_constants.ASSERT_NOT: self.empty_list,
             sre_constants.ANY:
@@ -465,6 +516,7 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.CATEGORY: self.category,
             sre_constants.GROUPREF: self.groupref,
         }
+        self.state = STATE_START
         # Now build a generator that knows all possible patterns
         self.raw = self.sub_values(sre_parse.parse(pattern, flags))
         # Configure this class instance to know about that result

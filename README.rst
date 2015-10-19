@@ -202,9 +202,15 @@ other exceptions:
   yet this appears to work fine.
 - Order does not depend on greediness.
 - The regex is treated as fullmatch.
-- ``sre_yield`` is confused by even the simplest of anchors:
+- ``sre_yield`` is confused by complex uses of anchors, but support simple ones:
 
   .. code-block:: pycon
 
       >>> list(sre_yield.AllStrings('foo$'))
-      []
+      ['foo']
+      >>> list(sre_yield.AllStrings('^$'))
+      ['']
+      >>> list(sre_yield.AllStrings('.\\b.'))
+      Traceback (most recent call last):
+      ...
+      ParseError: Non-end-anchor None found at END state
