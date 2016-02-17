@@ -469,8 +469,9 @@ class RegexMembershipSequence(WrappedSequence):
             # subpattern remains in END
         else:  # self.state == STATE_MIDDLE
             if matcher == 'at':
-                if arguments[0] in (
-                    sre_constants.AT_BEGINNING, sre_constants.AT_BEGINNING_STRING):
+                if arguments[0] not in (
+                    sre_constants.AT_END, sre_constants.AT_END_STRING,
+                    sre_constants.AT_BOUNDARY):
                     raise ParseError('Anchor %r found at MIDDLE state' % (arguments[0],))
                 # All others (AT_END, AT_END_STRING, AT_BOUNDARY) advance to END.
                 self.state = STATE_END

@@ -36,10 +36,14 @@ class AnchorTest(unittest.TestCase):
         self.assertEquals(['a', 'b'], list(parsed))
 
     def testParseErrorInMiddle(self):
-        self.assertRaises(sre_yield.ParseError, sre_yield.Values, '\\Ba')
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a\\bb')
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a^b')
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a$b')
+
+    def testParseErrorNotBoundary(self):
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, '\\Ba')
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a\\B')
+        self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a\\Bb')
 
     def testAnchorsDollar(self):
         parsed = sre_yield.Values('[ab]$')
@@ -69,6 +73,9 @@ class AnchorTest(unittest.TestCase):
         parsed = sre_yield.Values(r'[ab]$\b$')
         self.assertEquals(['a', 'b'], list(parsed))
 
+    def testAnchorsEmptyString(self):
+        parsed = sre_yield.Values(r'^^^$\b$')
+        self.assertEquals([''], list(parsed))
 
 
 if __name__ == '__main__':
