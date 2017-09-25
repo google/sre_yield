@@ -41,9 +41,15 @@ from sre_yield import fastdivmod
 _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
+# ASCII by default, see https://github.com/google/sre_yield/issues/3
 CHARSET = [chr(c) for c in range(256)]
 
 WORD = string.ascii_letters + string.digits + '_'
+
+try:
+    DEFAULT_RE_FLAGS = re.ASCII
+except AttributeError:
+    DEFAULT_RE_FLAGS = 0
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
 
@@ -485,6 +491,7 @@ class RegexMembershipSequence(WrappedSequence):
 
         self.named_group_lookup = self.matcher.groupindex
 
+        flags |= DEFAULT_RE_FLAGS # https://github.com/google/sre_yield/issues/3
         if flags & re.IGNORECASE:
             raise ParseError('Flag "i" not supported. https://github.com/google/sre_yield/issues/4')
         elif flags & re.UNICODE:

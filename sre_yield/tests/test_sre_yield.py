@@ -112,10 +112,9 @@ class YieldTest(unittest.TestCase):
 
     def testCategories(self):
         cat_chars = 'wWdDsS'
-        all_ascii = list(map(chr, list(range(256))))
         for c in cat_chars:
-            r = re.compile('\\' + c)
-            matching = [i for i in all_ascii if r.match(i)]
+            r = re.compile('\\' + c, flags=sre_yield.DEFAULT_RE_FLAGS)
+            matching = [i for i in sre_yield.CHARSET if r.match(i)]
             self.assertGreater(len(matching), 5)
             parsed = sre_yield.AllStrings('\\' + c)
             self.assertEqual(sorted(matching), sorted(parsed[:]))
