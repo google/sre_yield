@@ -66,7 +66,7 @@ def divmod_iter_chunking(x, by, chunk=None):
     while x:
         x, this_chunk = divmod(x, chunk)
         #this_chunk = int(this_chunk)
-        for _ in xrange(digits_per_chunk):
+        for _ in range(digits_per_chunk):
             this_chunk, m = divmod(this_chunk, by)
             yield m
 

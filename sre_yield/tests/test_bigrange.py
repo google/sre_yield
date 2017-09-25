@@ -33,16 +33,16 @@ def test_all():
         yield runner, t
 
 def runner(packed_test):
-    expected = list(xrange(*packed_test))
-    print "expected", expected
+    expected = list(range(*packed_test))
+    print("expected", expected)
     actual = list(sre_yield._bigrange(*packed_test))
-    print "actual", actual
+    print("actual", actual)
     assert expected == actual
 
 def test_bignum():
     # xrange(start, stop) raises OverflowError in py2.7
-    start = sys.maxint
-    stop = sys.maxint + 5
+    start = sys.maxsize
+    stop = sys.maxsize + 5
 
     l = list(sre_yield._bigrange(start, stop))
     assert len(l) == 5

@@ -52,7 +52,8 @@ def time_trial(func, args, kwargs):
     avg = (t1 - t0) / trials * MULTIPLIER
     return avg
 
-def pool_runner((trial_type, bignum, a, divisor)):
+def pool_runner(xxx_todo_changeme):
+    (trial_type, bignum, a, divisor) = xxx_todo_changeme
     if trial_type == 'basic':
         func = fastdivmod.divmod_iter_basic
         args = [bignum, divisor]
@@ -63,7 +64,7 @@ def pool_runner((trial_type, bignum, a, divisor)):
         func = fastdivmod.divmod_iter
         args = [bignum, divisor]
     elif trial_type == 'mult':
-        chunk = fastdivmod.find_largest_power(sys.maxint * a, divisor)
+        chunk = fastdivmod.find_largest_power(sys.maxsize * a, divisor)
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 1:
@@ -75,7 +76,7 @@ def pool_runner((trial_type, bignum, a, divisor)):
             return 'n/a', trial_type
 
     elif trial_type == 'pow':
-        chunk = fastdivmod.find_largest_power(sys.maxint ** a, divisor)
+        chunk = fastdivmod.find_largest_power(sys.maxsize ** a, divisor)
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 0:
@@ -96,8 +97,8 @@ def pool_runner((trial_type, bignum, a, divisor)):
             trial_type = 'd^%d' % (a,)
     try:
         return time_trial(func, args, {}), trial_type
-    except Exception, e:
-        print "\nException on", func, a, chunk, divisor, trial_type
+    except Exception as e:
+        print("\nException on", func, a, chunk, divisor, trial_type)
         traceback.print_exc()
         raise
 
@@ -120,13 +121,13 @@ def main(argv):
         else:
             raise NotImplementedError("Unknown arg %r" % (arg,))
 
-    print "%d decimal digits, multiplier %d" % (
-        math.log(bignum) / math.log(10), MULTIPLIER)
+    print("%d decimal digits, multiplier %d" % (
+        math.log(bignum) / math.log(10), MULTIPLIER))
 
-    divisors = (2, 10, 254, 255, 1024, sys.maxint, sys.maxint**2, sys.maxint**4)
-    best = [sys.maxint] * len(divisors)
+    divisors = (2, 10, 254, 255, 1024, sys.maxsize, sys.maxsize**2, sys.maxsize**4)
+    best = [sys.maxsize] * len(divisors)
 
-    print "chunk\t",
+    print("chunk\t", end=' ')
     def trunc(x):
         if len(str(x)) > 6:
             return "%.1e" % (x,)
@@ -146,7 +147,7 @@ def main(argv):
 
     tests_l2 = [t + (d,) for t in tests_l1 for d in divisors]
 
-    print "\t".join(map(trunc, divisors))
+    print("\t".join(map(trunc, divisors)))
     prev_label = None
 
     # Chrome always eats up about 1 cpu; either boost priority or subtract here.
@@ -176,7 +177,7 @@ def main(argv):
 
         pool.terminate()
 
-    print
+    print()
 
 if __name__ == '__main__':
     main(sys.argv[1:])

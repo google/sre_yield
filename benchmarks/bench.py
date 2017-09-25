@@ -30,12 +30,12 @@ sys.path.insert(0, root)
 import sre_yield
 
 def first_slice(obj):
-    for i in xrange(10):
+    for i in range(10):
         x = obj[i]
         del x
 
 def last_slice(obj):
-    for i in xrange(10):
+    for i in range(10):
         x = obj[-(i+1)]
         del x
 
@@ -84,10 +84,10 @@ def main(args):
     with open('/proc/self/status') as f:
         for line in f:
             if line.startswith('VmPeak'):
-                print line.split(':')[1].strip().rstrip(' kB')
+                print(line.split(':')[1].strip().rstrip(' kB'))
                 return
         else:
-            print
+            print()
 
 if __name__ == '__main__':
     main(sys.argv[1:])
