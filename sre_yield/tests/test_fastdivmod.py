@@ -39,7 +39,7 @@ class FastDivmodTest(unittest.TestCase):
 
     def test_bad_chunk_sizes(self):
         g = divmod_iter_chunking(1234, 10, 11)
-        self.assertRaises(ValueError, g.__next__)
+        self.assertRaises(ValueError, lambda: next(g))
 
     def test_huge_number_1(self):
         v = divmod_iter_chunking(70110209207109374, 255)
@@ -112,7 +112,11 @@ def test_correctness_big_numbers():
                 yield runner, x, base, chunk
 
 def runner(x, base, chunk):
-    for i, j in itertools.zip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
+    try:
+        zip_longest = itertools.izip_longest
+    except AttributeError:
+        zip_longest = itertools.zip_longest
+    for i, j in zip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
         if i is None:
             print("phooey")
         else:
