@@ -31,7 +31,7 @@ def divmod_iter(x, by, chunk=None):
 
     if hasattr(x, 'bit_length'):
         # crude log(2, x)
-        divisions = x.bit_length() / by.bit_length()
+        divisions = x.bit_length() // by.bit_length()
     else:
         divisions = log(x) / log(by)
 
@@ -90,4 +90,4 @@ def powersum(x, low, high):
         return high - low + 1
     a = x ** (high + 1)
     b = x ** low
-    return (a - b) / xm1
+    return (a - b) // xm1

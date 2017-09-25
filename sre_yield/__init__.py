@@ -43,7 +43,7 @@ _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
 CHARSET = [chr(c) for c in range(256)]
 
-WORD = string.letters + string.digits + '_'
+WORD = string.ascii_letters + string.digits + '_'
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
 
@@ -171,7 +171,7 @@ class WrappedSequence(object):
         return self.get_item(i)
 
     def __iter__(self):
-        for i in _xrange(self.length):
+        for i in _xrange(int(self.length)):
             yield self.get_item(i)
 
 
