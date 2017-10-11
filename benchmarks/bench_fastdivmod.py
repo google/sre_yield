@@ -52,8 +52,8 @@ def time_trial(func, args, kwargs):
     avg = (t1 - t0) / trials * MULTIPLIER
     return avg
 
-def pool_runner(xxx_todo_changeme):
-    (trial_type, bignum, a, divisor) = xxx_todo_changeme
+def pool_runner(runner_args):
+    (trial_type, bignum, a, divisor) = runner_args
     if trial_type == 'basic':
         func = fastdivmod.divmod_iter_basic
         args = [bignum, divisor]

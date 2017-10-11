@@ -38,6 +38,11 @@ import types
 from sre_yield import cachingseq
 from sre_yield import fastdivmod
 
+try:
+    xrange = xrange
+except NameError:
+    xrange = range
+
 _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
@@ -119,7 +124,7 @@ def _xrange(*args):
     """Because xrange doesn't support longs :("""
     # prefer real xrange if it works
     try:
-        return range(*args)
+        return xrange(*args)
     except OverflowError:
         return _bigrange(*args)
 
@@ -430,7 +435,11 @@ class RegexMembershipSequence(WrappedSequence):
         # No idea what to do here
         raise ParseError(repr(parsed))
 
-    def maybe_save(self, group, parsed):
+    def maybe_save(self, *args):
+        # Python 3.6 has group, add_flags, del_flags, parsed
+        # while earlier versions just have group, parsed
+        group = args[0]
+        parsed = args[-1]
         rv = self.sub_values(parsed)
         if group is not None:
             rv = SaveCaptureGroup(rv, group)
@@ -453,28 +462,28 @@ class RegexMembershipSequence(WrappedSequence):
         #  ^ \b ^ X Y \b $
         old_state = self.state
         if self.state == STATE_START:
-            if matcher == 'at':
+            if matcher == sre_constants.AT:
                 if arguments[0] in (sre_constants.AT_END, sre_constants.AT_END_STRING):
                     self.state = STATE_END
                 elif arguments[0] == sre_constants.AT_NON_BOUNDARY:
                     # This is nonsensical at beginning of string
                     raise ParseError('Anchor %r found at START state' % (arguments[0],))
                 # All others (AT_BEGINNING, AT_BEGINNING_STRING, and AT_BOUNDARY) remain in START.
-            elif matcher != 'subpattern':
+            elif matcher != sre_constants.SUBPATTERN:
                 self.state = STATE_MIDDLE
             # subpattern remains in START
         elif self.state == STATE_END:
-            if matcher == 'at':
+            if matcher == sre_constants.AT:
                 if arguments[0] not in (
                     sre_constants.AT_END, sre_constants.AT_END_STRING,
                     sre_constants.AT_BOUNDARY):
                     raise ParseError('Anchor %r found at END state' % (arguments[0],))
                 # those three remain in END
-            elif matcher != 'subpattern':
+            elif matcher != sre_constants.SUBPATTERN:
                 raise ParseError('Non-end-anchor %r found at END state' % (arguments[0],))
             # subpattern remains in END
         else:  # self.state == STATE_MIDDLE
-            if matcher == 'at':
+            if matcher == sre_constants.AT:
                 if arguments[0] not in (
                     sre_constants.AT_END, sre_constants.AT_END_STRING,
                     sre_constants.AT_BOUNDARY):
