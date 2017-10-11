@@ -34,19 +34,19 @@ class YieldTest(unittest.TestCase):
 
     def testOtherCases(self):
         self.assertSequenceEqual(sre_yield.AllStrings('[aeiou]'), list('aeiou'))
-        self.assertEquals(len(sre_yield.AllStrings('1.3', flags=re.DOTALL)), 256)
+        self.assertEqual(len(sre_yield.AllStrings('1.3', flags=re.DOTALL)), 256)
         v = sre_yield.AllStrings('[^-]3[._]1415', flags=re.DOTALL)
-        print list(v)
-        self.assertEquals(len(v), 510)
-        self.assertEquals(len(sre_yield.AllStrings('(.|5[6-9]|[6-9][0-9])[a-z].?',
+        print(list(v))
+        self.assertEqual(len(v), 510)
+        self.assertEqual(len(sre_yield.AllStrings('(.|5[6-9]|[6-9][0-9])[a-z].?',
                                                flags=re.DOTALL)),
                           300 * 26 * 257)
-        self.assertEquals(len(sre_yield.AllStrings('..', charset='0123456789')),
+        self.assertEqual(len(sre_yield.AllStrings('..', charset='0123456789')),
                           100)
-        self.assertEquals(len(sre_yield.AllStrings('0*')), 65536)
+        self.assertEqual(len(sre_yield.AllStrings('0*')), 65536)
         # For really big lists, we can't use the len() function any more
-        self.assertEquals(sre_yield.AllStrings('0*').__len__(), 65536)
-        self.assertEquals(sre_yield.AllStrings('[01]*').__len__(), 2 ** 65536 - 1)
+        self.assertEqual(sre_yield.AllStrings('0*').__len__(), 65536)
+        self.assertEqual(sre_yield.AllStrings('[01]*').__len__(), 2 ** 65536 - 1)
 
     def testAlternationWithEmptyElement(self):
         self.assertSequenceEqual(sre_yield.AllStrings('a(b|c|)'),
@@ -67,9 +67,9 @@ class YieldTest(unittest.TestCase):
         self.assertSequenceEqual(parsed[1:99], list('bcdef'))
         self.assertSequenceEqual(parsed[1:1], [])
 
-        self.assertEquals(parsed[1], 'b')
-        self.assertEquals(parsed[-2], 'e')
-        self.assertEquals(parsed[-1], 'f')
+        self.assertEqual(parsed[1], 'b')
+        self.assertEqual(parsed[-2], 'e')
+        self.assertEqual(parsed[-1], 'f')
 
     def testSlicesRepeated(self):
         parsed = sre_yield.AllStrings('[abcdef]')
@@ -79,16 +79,16 @@ class YieldTest(unittest.TestCase):
 
     def testGetItemNegative(self):
         parsed = sre_yield.AllStrings('x|[a-z]{1,5}')
-        self.assertEquals(parsed[0], 'x')
-        self.assertEquals(parsed[1], 'a')
-        self.assertEquals(parsed[23], 'w')
-        self.assertEquals(parsed[24], 'x')
-        self.assertEquals(parsed[25], 'y')
-        self.assertEquals(parsed[26], 'z')
-        self.assertEquals(parsed[27], 'aa')
-        self.assertEquals(parsed[28], 'ab')
-        self.assertEquals(parsed[-2], 'zzzzy')
-        self.assertEquals(parsed[-1], 'zzzzz')
+        self.assertEqual(parsed[0], 'x')
+        self.assertEqual(parsed[1], 'a')
+        self.assertEqual(parsed[23], 'w')
+        self.assertEqual(parsed[24], 'x')
+        self.assertEqual(parsed[25], 'y')
+        self.assertEqual(parsed[26], 'z')
+        self.assertEqual(parsed[27], 'aa')
+        self.assertEqual(parsed[28], 'ab')
+        self.assertEqual(parsed[-2], 'zzzzy')
+        self.assertEqual(parsed[-1], 'zzzzz')
 
         # last, and first
         parsed.get_item(len(parsed)-1)
@@ -105,30 +105,29 @@ class YieldTest(unittest.TestCase):
 
     def testNaturalOrder(self):
         parsed = sre_yield.AllStrings('[0-9]{2}')
-        self.assertEquals(parsed[0], '00')
-        self.assertEquals(parsed[1], '01')
-        self.assertEquals(parsed[98], '98')
-        self.assertEquals(parsed[99], '99')
+        self.assertEqual(parsed[0], '00')
+        self.assertEqual(parsed[1], '01')
+        self.assertEqual(parsed[98], '98')
+        self.assertEqual(parsed[99], '99')
 
     def testCategories(self):
         cat_chars = 'wWdDsS'
-        all_ascii = map(chr, range(256))
         for c in cat_chars:
-            r = re.compile('\\' + c)
-            matching = [i for i in all_ascii if r.match(i)]
+            r = re.compile('\\' + c, flags=sre_yield.DEFAULT_RE_FLAGS)
+            matching = [i for i in sre_yield.CHARSET if r.match(i)]
             self.assertGreater(len(matching), 5)
             parsed = sre_yield.AllStrings('\\' + c)
-            self.assertEquals(sorted(matching), sorted(parsed[:]))
+            self.assertEqual(sorted(matching), sorted(parsed[:]))
 
     def testDotallFlag(self):
         parsed = sre_yield.AllStrings('.', charset='abc\n')
-        self.assertEquals(['a', 'b', 'c'], parsed[:])
+        self.assertEqual(['a', 'b', 'c'], parsed[:])
         parsed = sre_yield.AllStrings('.', charset='abc\n', flags=re.DOTALL)
-        self.assertEquals(['a', 'b', 'c', '\n'], parsed[:])
+        self.assertEqual(['a', 'b', 'c', '\n'], parsed[:])
 
     def testMaxCount(self):
         parsed = sre_yield.AllStrings('[01]+', max_count=4)
-        self.assertEquals('1111', parsed[-1])
+        self.assertEqual('1111', parsed[-1])
 
     def testParseErrors(self):
         self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, 'a', re.I)
@@ -138,41 +137,41 @@ class YieldTest(unittest.TestCase):
     def testSavingGroups(self):
         parsed = sre_yield.AllStrings(r'(([abc])d)e')
         d = {}
-        self.assertEquals('ade', parsed.get_item(0, d))
-        self.assertEquals('ad', d[1])
-        self.assertEquals('a', d[2])
+        self.assertEqual('ade', parsed.get_item(0, d))
+        self.assertEqual('ad', d[1])
+        self.assertEqual('a', d[2])
 
     def testSavingGroupsByName(self):
         parsed = sre_yield.AllMatches(r'x(?P<foo>[abc])x')
         m = parsed[0]
-        self.assertEquals('xax', m.group(0))
-        self.assertEquals('a', m.group(1))
-        self.assertEquals('a', m.group('foo'))
+        self.assertEqual('xax', m.group(0))
+        self.assertEqual('a', m.group(1))
+        self.assertEqual('a', m.group('foo'))
 
     def testBackrefCounts(self):
         parsed = sre_yield.AllStrings(r'([abc])-\1')
-        self.assertEquals(3, len(parsed))
-        self.assertEquals(['a-a', 'b-b', 'c-c'], parsed[:])
+        self.assertEqual(3, len(parsed))
+        self.assertEqual(['a-a', 'b-b', 'c-c'], parsed[:])
 
     def testSlicingMatches(self):
         parsed = sre_yield.AllMatches(r'([abc])-\1')
-        self.assertEquals(3, len(parsed))
-        self.assertEquals(['a-a', 'b-b'], [x.group(0) for x in parsed[:2]])
+        self.assertEqual(3, len(parsed))
+        self.assertEqual(['a-a', 'b-b'], [x.group(0) for x in parsed[:2]])
 
     def testAllStringsIsValues(self):
-        self.assertEquals(sre_yield.AllStrings, sre_yield.Values)
+        self.assertEqual(sre_yield.AllStrings, sre_yield.Values)
 
     def testCanIterateGiantValues(self):
         v = sre_yield.AllStrings('.+')
-        self.assertGreater(v.__len__(), sys.maxint)
+        self.assertGreater(v.__len__(), sys.maxsize)
         it = iter(v)
-        self.assertEquals('\x00', it.next())
-        self.assertEquals('\x01', it.next())
+        self.assertEqual('\x00', next(it))
+        self.assertEqual('\x01', next(it))
 
     def testCanSliceGiantValues(self):
         v = sre_yield.AllStrings('.+')
-        self.assertGreater(v.__len__(), sys.maxint)
-        self.assertEquals(['\x00', '\x01'], list(v[:2]))
+        self.assertGreater(v.__len__(), sys.maxsize)
+        self.assertEqual(['\x00', '\x01'], list(v[:2]))
 
 
 if __name__ == '__main__':

@@ -25,36 +25,36 @@ from sre_yield.fastdivmod import divmod_iter_chunking, divmod_iter_basic, powers
 class FastDivmodTest(unittest.TestCase):
     def test_divmod_iter_basic(self):
         v = divmod_iter_basic(1234, 10)
-        self.assertEquals([4, 3, 2, 1], list(v))
+        self.assertEqual([4, 3, 2, 1], list(v))
 
     def test_basics(self):
         v = divmod_iter_chunking(1234, 10, 10)
-        self.assertEquals([4, 3, 2, 1], list(v))
+        self.assertEqual([4, 3, 2, 1], list(v))
 
         v = divmod_iter_chunking(1234, 10, 100)
-        self.assertEquals([4, 3, 2, 1], list(v))
+        self.assertEqual([4, 3, 2, 1], list(v))
 
         v = divmod_iter_chunking(1234, 10, 1000)
-        self.assertEquals([4, 3, 2, 1], list(v))
+        self.assertEqual([4, 3, 2, 1], list(v))
 
     def test_bad_chunk_sizes(self):
         g = divmod_iter_chunking(1234, 10, 11)
-        self.assertRaises(ValueError, g.next)
+        self.assertRaises(ValueError, lambda: next(g))
 
     def test_huge_number_1(self):
         v = divmod_iter_chunking(70110209207109374, 255)
-        self.assertEquals([254, 254, 254, 254, 254, 254, 254], list(v))
+        self.assertEqual([254, 254, 254, 254, 254, 254, 254], list(v))
 
     def test_huge_number_2(self):
         bignum = 1162523670191533212890624
 
         assert 255**11 > bignum
         v = divmod_iter_chunking(bignum, 255, 255**11)
-        self.assertEquals([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], map(int, v))
+        self.assertEqual([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v)))
 
         assert 255**9 < bignum
         v = divmod_iter_chunking(bignum, 255, 255**9)
-        self.assertEquals([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], map(int, v))
+        self.assertEqual([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v)))
 
     def test_huge_number_3(self):
         # this comes from '(?:[a-z]{,100}){,1000}'
@@ -84,14 +84,14 @@ class FastDivmodTest(unittest.TestCase):
     679728567750494783710131249615739065586686514755989308471095
     118505256601463774083310772237026000
     '''.replace(' ', '').replace('\n', '')
-        bignum = long(bignum)
-        bignum2 = 3268647867246256383381332100041691484373976788312974266629140102414955744756908184404049903032490380904202638084876187965749304595652472251350L
+        bignum = int(bignum)
+        bignum2 = 3268647867246256383381332100041691484373976788312974266629140102414955744756908184404049903032490380904202638084876187965749304595652472251350
 
         v = divmod_iter_chunking(bignum, bignum2)
         # there are at least 3 terms
-        v.next()
-        v.next()
-        v.next()
+        next(v)
+        next(v)
+        next(v)
         for i in v:
             pass
         # ...and it finishes
@@ -106,15 +106,19 @@ def test_correctness_big_numbers():
                 yield runner, x, base, chunk
 
     for _ in range(10):
-        x = random.randint(1, 2**32) * sys.maxint ** 6
+        x = random.randint(1, 2**32) * sys.maxsize ** 6
         for base in (2, 10, 255, 256):
             for chunk in (base, base**2, base**3, base**4):
                 yield runner, x, base, chunk
 
 def runner(x, base, chunk):
-    for i, j in itertools.izip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
+    try:
+        zip_longest = itertools.izip_longest
+    except AttributeError:
+        zip_longest = itertools.zip_longest
+    for i, j in zip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
         if i is None:
-            print "phooey"
+            print("phooey")
         else:
             assert i == j
 

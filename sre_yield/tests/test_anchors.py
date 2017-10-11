@@ -25,15 +25,15 @@ class AnchorTest(unittest.TestCase):
 
     def testAnchorsCaret(self):
         parsed = sre_yield.Values('^[ab]')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsA(self):
         parsed = sre_yield.Values('\\A[ab]')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsMultiCaret(self):
         parsed = sre_yield.Values('^(\\b^([ab]))')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testParseErrorInMiddle(self):
         self.assertRaises(sre_yield.ParseError, sre_yield.Values, 'a\\bb')
@@ -47,35 +47,35 @@ class AnchorTest(unittest.TestCase):
 
     def testAnchorsDollar(self):
         parsed = sre_yield.Values('[ab]$')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsZ(self):
         parsed = sre_yield.Values('[ab]\\Z')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsCombined(self):
         parsed = sre_yield.Values('^[ab]$')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsBoundary(self):
         parsed = sre_yield.Values('ab\\b')
-        self.assertEquals(['ab'], list(parsed))
+        self.assertEqual(['ab'], list(parsed))
         parsed = sre_yield.Values('\\bab')
-        self.assertEquals(['ab'], list(parsed))
+        self.assertEqual(['ab'], list(parsed))
         parsed = sre_yield.Values('\\bab\\b')
-        self.assertEquals(['ab'], list(parsed))
+        self.assertEqual(['ab'], list(parsed))
 
     def testAnchorsRepeated(self):
         parsed = sre_yield.Values(r'^\b^[ab]')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsRepeated(self):
         parsed = sre_yield.Values(r'[ab]$\b$')
-        self.assertEquals(['a', 'b'], list(parsed))
+        self.assertEqual(['a', 'b'], list(parsed))
 
     def testAnchorsEmptyString(self):
         parsed = sre_yield.Values(r'^^^$\b$')
-        self.assertEquals([''], list(parsed))
+        self.assertEqual([''], list(parsed))
 
 
 if __name__ == '__main__':

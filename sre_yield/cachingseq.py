@@ -51,5 +51,5 @@ class CachingFuncSequence(object):
         return self.length
 
     def __iter__(self):
-        for i in xrange(self.length):
+        for i in range(self.length):
             yield self[i]

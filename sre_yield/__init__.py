@@ -41,11 +41,17 @@ from sre_yield import fastdivmod
 _RE_METACHARS = r'$^{}*+\\'
 _ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
-CHARSET = [chr(c) for c in xrange(256)]
+# ASCII by default, see https://github.com/google/sre_yield/issues/3
+CHARSET = [chr(c) for c in range(256)]
 
-WORD = string.letters + string.digits + '_'
+WORD = string.ascii_letters + string.digits + '_'
 
-STATE_START, STATE_MIDDLE, STATE_END = range(3)
+try:
+    DEFAULT_RE_FLAGS = re.ASCII
+except AttributeError:
+    DEFAULT_RE_FLAGS = 0
+
+STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
 
 def Not(chars):
     return ''.join(sorted(set(CHARSET) - set(chars)))
@@ -113,7 +119,7 @@ def _xrange(*args):
     """Because xrange doesn't support longs :("""
     # prefer real xrange if it works
     try:
-        return xrange(*args)
+        return range(*args)
     except OverflowError:
         return _bigrange(*args)
 
@@ -160,7 +166,7 @@ class WrappedSequence(object):
 
     def __getitem__(self, i):
         # If the user wanted a slice, we provide a wrapper
-        if isinstance(i, types.SliceType):
+        if isinstance(i, slice):
             result = SlicedSequence(self, slicer=i)
             if result.__len__() < 16:
                 # Short lists are unpacked
@@ -171,7 +177,7 @@ class WrappedSequence(object):
         return self.get_item(i)
 
     def __iter__(self):
-        for i in _xrange(self.length):
+        for i in _xrange(int(self.length)):
             yield self.get_item(i)
 
 
@@ -278,17 +284,17 @@ class RepetitiveSequence(WrappedSequence):
             arbitrary_entry, highest - lowest+1, entry_from_prev)
         # This needs to be a constant in order to reuse caclulations in future
         # calls to bisect (a moving target will produce more misses).
-        if self.offsets[-1][0] > sys.maxint:
+        if self.offsets[-1][0] > sys.maxsize:
             i = 0
             while i + 2 < len(self.offsets):
-                if self.offsets[i+1][0] > sys.maxint:
+                if self.offsets[i+1][0] > sys.maxsize:
                     self.index_of_offset = i
                     self.offset_break = self.offsets[i][0]
                     break
                 i += 1
         else:
             self.index_of_offset = len(self.offsets)
-            self.offset_break = sys.maxint
+            self.offset_break = sys.maxsize
 
     def get_item(self, i, d=None):
         """Finds out how many repeats this index implies, then picks strings."""
@@ -485,6 +491,7 @@ class RegexMembershipSequence(WrappedSequence):
 
         self.named_group_lookup = self.matcher.groupindex
 
+        flags |= DEFAULT_RE_FLAGS # https://github.com/google/sre_yield/issues/3
         if flags & re.IGNORECASE:
             raise ParseError('Flag "i" not supported. https://github.com/google/sre_yield/issues/4')
         elif flags & re.UNICODE:
@@ -502,7 +509,7 @@ class RegexMembershipSequence(WrappedSequence):
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
-            sre_constants.RANGE: lambda l, h: [chr(c) for c in xrange(l, h+1)],
+            sre_constants.RANGE: lambda l, h: [chr(c) for c in range(l, h+1)],
             sre_constants.SUBPATTERN: self.maybe_save,
             sre_constants.BRANCH: self.branch_values,
             sre_constants.MIN_REPEAT: self.max_repeat_values,
@@ -530,7 +537,7 @@ class RegexMembershipSequence(WrappedSequence):
 
 class RegexMembershipSequenceMatches(RegexMembershipSequence):
     def __getitem__(self, i):
-        if isinstance(i, types.SliceType):
+        if isinstance(i, slice):
             result = SlicedSequence(self, slicer=i)
             if result.__len__() < 16:
                 # Short lists are unpacked
@@ -569,7 +576,7 @@ class Match(object):
 
     def groupdict(self):
         d = {}
-        for k, v in self._named_groups.iteritems():
+        for k, v in self._named_groups.items():
             d[k] = self._groups[v]
         return d
 
@@ -588,7 +595,7 @@ def main(argv=None):
         argv = sys.argv
     for arg in argv[1:]:
         for i in AllStrings(arg):
-            print i
+            print(i)
 
 
 if __name__ == '__main__':

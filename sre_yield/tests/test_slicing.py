@@ -32,7 +32,7 @@ E = ExtractSliceType()
 
 # Confirm that the new slice_indices function behaves like SliceType.indices
 
-ARR = map(str, range(100))
+ARR = list(map(str, list(range(100))))
 REG = sre_yield.AllStrings('\d{1}|1\d|2\d|3\d|4\d|5\d|6\d|7\d|8\d|9\d')
 
 def test_prereqs():
@@ -52,18 +52,18 @@ def test_parity():
 def indices_runner(start, stop, step):
     st = E[start:stop:step]
     expected = st.indices(100)
-    print "expected", expected
+    print("expected", expected)
     actual = sre_yield.slice_indices(st, 100)
-    print "actual", actual
-    print "array", ARR[st]
+    print("actual", actual)
+    print("array", ARR[st])
     assert expected == actual
 
 def content_runner(start, stop, step):
     st = E[start:stop:step]
     indices = st.indices(100)
-    print "indices", indices
+    print("indices", indices)
     expected = ARR[st]
-    print "expected", expected
+    print("expected", expected)
     actual = list(REG[st])
-    print "actual", actual
+    print("actual", actual)
     assert expected == actual
