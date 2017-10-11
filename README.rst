@@ -74,8 +74,9 @@ number.
 .. code-block:: pycon
 
     >>> v2 = sre_yield.AllStrings('.{,30}(' + s + ').{,30}')
-    >>> v2.__len__()  # too big for int
-    57220492262913872576843611006974799576789176661653180757625052079917448874638816841926032487457234703154759402702651149752815320219511292208238103L
+    >>> el = v2.__len__()  # too big for int
+    >>> print(str(el).rstrip('L'))
+    57220492262913872576843611006974799576789176661653180757625052079917448874638816841926032487457234703154759402702651149752815320219511292208238103
     >>> 'kennedy' in v2
     True
 
@@ -143,12 +144,12 @@ they handle repetitions:
     120
 
     # Now random.choice(v) has a 3/120 chance of choosing a single letter.
-    >>> random.seed(1)
-    >>> sum([1 if len(random.choice(v)) == 1 else 0 for _ in range(120)])
+    >>> len([x for x in v if len(x) == 1])
     3
 
     # xeger(v) has ~25% chance of choosing a single letter, because the length
     and match are chosen independently.
+    # (This doesn't run, so the doctests don't require xeger)
     > from rstr import xeger
     > sum([1 if len(xeger('[abc]{1,4}')) == 1 else 0 for _ in range(120)])
     26
@@ -210,7 +211,7 @@ other exceptions:
       ['foo']
       >>> list(sre_yield.AllStrings('^$'))
       ['']
-      >>> list(sre_yield.AllStrings('.\\b.'))
+      >>> list(sre_yield.AllStrings('.\\b.'))  # doctest: +IGNORE_EXCEPTION_DETAIL
       Traceback (most recent call last):
       ...
       ParseError: Non-end-anchor None found at END state
