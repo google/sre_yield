@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 #
-# Copyright 2011-2016 Google Inc.
+# Copyright 2011-2018 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import os.path
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 
-version = '1.0'
+version = '1.1'
 
 setup(name='sre_yield',
       version=version,
