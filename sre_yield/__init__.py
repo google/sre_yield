@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
 # Copyright 2011-2016 Google Inc.
+# Copyright 2018 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -269,6 +270,11 @@ class CombinatoricsSequence(WrappedSequence):
         return '{combin ' + repr(self.list_lengths) + '}'
 
 
+# Intuition is that this should be around 2**16 to 2**64, but the exact value is
+# not important.
+OFFSET_BREAK_THRESHOLD = sys.maxsize
+
+
 class RepetitiveSequence(WrappedSequence):
     """This chooses an entry from a list, many times, and concatenates."""
 
@@ -287,19 +293,27 @@ class RepetitiveSequence(WrappedSequence):
 
         self.offsets = cachingseq.CachingFuncSequence(
             arbitrary_entry, highest - lowest+1, entry_from_prev)
-        # This needs to be a constant in order to reuse caclulations in future
-        # calls to bisect (a moving target will produce more misses).
+
+        # `offset_break` is an optimization around bisect, which would normally
+        # choose the "middle" value to bisect on, which does a lot of work
+        # that's unnecessary at the bottom of the range (say, the first 256
+        # entries).
+        #
+        # A good choice of OFFSET_BREAK_THRESHOLD minimizes the wasted work up
+        # front (we have to calculate all the offsets now up to it), and is
+        # still larger than most performant lookups will need.  Anything above
+        # that will result in a big penalty as we get into arbitrary-precision
+        # integers and use the standard bisect logic.
+
         if self.offsets[-1][0] > sys.maxsize:
-            i = 0
-            while i + 2 < len(self.offsets):
+            for i in range(len(self.offsets)-1):
                 if self.offsets[i+1][0] > sys.maxsize:
                     self.index_of_offset = i
                     self.offset_break = self.offsets[i][0]
-                    break
-                i += 1
-        else:
-            self.index_of_offset = len(self.offsets)
-            self.offset_break = sys.maxsize
+                    return
+
+        self.index_of_offset = len(self.offsets)
+        self.offset_break = self.offsets[-1][0] + 1
 
     def get_item(self, i, d=None):
         """Finds out how many repeats this index implies, then picks strings."""

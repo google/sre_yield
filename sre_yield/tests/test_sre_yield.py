@@ -174,6 +174,12 @@ class YieldTest(unittest.TestCase):
         self.assertGreater(v.__len__(), sys.maxsize)
         self.assertEqual(['\x00', '\x01'], list(v[:2]))
 
+    def testOffset(self):
+        # This was discovered after https://github.com/google/sre_yield/issues/10
+        v = sre_yield.AllStrings('([0-9a-fA-F]{0,4}:){0,5}')
+        l = v.__len__()
+        self.assertTrue(v.__getitem__(l-1))
+
 
 if __name__ == '__main__':
     unittest.main()
