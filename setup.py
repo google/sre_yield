@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
-# Copyright 2011-2018 Google Inc.
+# Copyright 2011-2016 Google Inc.
+# Copyright 2018 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,23 +17,23 @@
 #
 # vim: sw=2 sts=2 et
 
-from setuptools import setup, find_packages
 import os.path
+from setuptools import setup, find_packages
 
-here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+README = open(os.path.join(THIS_DIR, 'README.rst')).read()
 
-version = '1.1'
+VERSION = '1.2'
 
 setup(name='sre_yield',
-      version=version,
+      version=VERSION,
       description='Expands a regular expression to its possible matches',
       long_description=README,
-      classifiers = [
-        'License :: OSI Approved :: Apache Software License',
-        'Intended Audience :: Developers',
-        'Development Status :: 5 - Production/Stable',
-        'Operating System :: OS Independent',
+      classifiers=[
+          'License :: OSI Approved :: Apache Software License',
+          'Intended Audience :: Developers',
+          'Development Status :: 5 - Production/Stable',
+          'Operating System :: OS Independent',
       ],
       keywords='',
       author='Alex Perry',
@@ -42,9 +43,9 @@ setup(name='sre_yield',
       packages=find_packages('.'),
       install_requires=[],
       entry_points={
-        'console_scripts': [
-            'demo_sre_yield=sre_yield:main',
-        ],
+          'console_scripts': [
+              'demo_sre_yield=sre_yield:main',
+          ],
       },
       test_suite='nose.collector', # doesn't find doctests though
       tests_require=['nose'],

@@ -474,7 +474,6 @@ class RegexMembershipSequence(WrappedSequence):
         # | |  | | | / still STATE_MIDDLE
         # . .  . . . .  / advances MIDDLE to END
         #  ^ \b ^ X Y \b $
-        old_state = self.state
         if self.state == STATE_START:
             if matcher == sre_constants.AT:
                 if arguments[0] in (sre_constants.AT_END, sre_constants.AT_END_STRING):

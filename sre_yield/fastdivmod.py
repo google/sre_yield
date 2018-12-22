@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
 # Copyright 2011-2016 Google Inc.
+# Copyright 2018 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +17,7 @@
 #
 # vim: sw=2 sts=2 et
 
-from math import log, ceil
-import sys
+from math import log
 
 
 def find_largest_power(less_than, base):
@@ -45,7 +45,7 @@ def divmod_iter_chunking(x, by, chunk=None):
     """Generate successive (x % by); x /= by, but faster.
 
     If provided, |chunk| must be a power of |by| (otherwise it is determined
-    automatically for 1024 per inner loop, based on analysis of bench_genmod.py)
+    automatically for 1024 per inner loop, based on analysis of bench_fastdivmod.py)
     """
 
     if by == 1:
