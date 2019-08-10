@@ -1,7 +1,7 @@
-PYTHON?=python2
-NOSETESTS?=nosetests2
+PYTHON?=python
+NOSETESTS?=nosetests
 TESTOPTS?=-v
-PYLINT?=pylint2
+PYLINT?=pylint
 RST2HTML?=rst2html
 PYGMENTIZE?=pygmentize
 
