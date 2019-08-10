@@ -24,7 +24,7 @@ class SlowYieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
 
     def testDotStarCase(self):
-        test_size = sre_yield.AllStrings('.*', re.DOTALL).__len__()
+        test_size = sre_yield.AllStrings(".*", re.DOTALL).__len__()
         actual_size = 0
         for _ in range(65536):
             actual_size = actual_size * 256 + 1
@@ -32,14 +32,14 @@ class SlowYieldTest(unittest.TestCase):
 
     def testContentsNearBreak(self):
         # This specific location is on either side of offset_break in sre_yield.py
-        v = sre_yield.Values('.*')
+        v = sre_yield.Values(".*")
         a = v[70386233652806655][:10]
-        self.assertEqual('\xff\xff\xff\xff\xff\xff\xff', a)
+        self.assertEqual("\xff\xff\xff\xff\xff\xff\xff", a)
         b = v[70386233652806656][:10]
-        self.assertEqual('\x00\x00\x00\x00\x00\x00\x00\x00', b)
+        self.assertEqual("\x00\x00\x00\x00\x00\x00\x00\x00", b)
         c = v[70386233652806657][:10]
-        self.assertEqual('\x00\x00\x00\x00\x00\x00\x00\x01', c)
+        self.assertEqual("\x00\x00\x00\x00\x00\x00\x00\x01", c)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

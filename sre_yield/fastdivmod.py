@@ -18,6 +18,7 @@
 # vim: sw=2 sts=2 et
 
 from math import log
+
 try:
     long = long  # py2.7 compat
 except NameError:
@@ -52,7 +53,7 @@ def divmod_iter(x, by, chunk=None):
     if x < by:
         return [x]
 
-    if hasattr(x, 'bit_length'):
+    if hasattr(x, "bit_length"):
         # crude log(2, x)
         divisions = x.bit_length() // by.bit_length()
     else:
@@ -77,8 +78,7 @@ def divmod_iter_chunking(x, by, chunk=None):
     if by == 1:
         if x != 0:
             raise ValueError(
-                "x=0 by=1 is allowed as a base case, but no other x may have "
-                "by=1"
+                "x=0 by=1 is allowed as a base case, but no other x may have " "by=1"
             )
         yield 0
         return
@@ -95,7 +95,7 @@ def divmod_iter_chunking(x, by, chunk=None):
 
     while x:
         x, this_chunk = divmod(x, chunk)
-        #this_chunk = int(this_chunk)
+        # this_chunk = int(this_chunk)
         for _ in range(digits_per_chunk):
             this_chunk, m = divmod(this_chunk, by)
             yield m
@@ -112,6 +112,7 @@ def divmod_iter_basic(x, by, chunk=None):
     while x:
         x, m = divmod(x, by)
         yield m
+
 
 def powersum(x, low, high):
     # http://mikestoolbox.com/powersum.html

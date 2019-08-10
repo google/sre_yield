@@ -30,9 +30,11 @@ TESTCASES = [
 ]
 # fmt: on
 
+
 def test_all():
     for t in TESTCASES:
         yield runner, t
+
 
 def runner(packed_test):
     expected = list(range(*packed_test))
@@ -40,6 +42,7 @@ def runner(packed_test):
     actual = list(sre_yield._bigrange(*packed_test))
     print("actual", actual)
     assert expected == actual
+
 
 def test_bignum():
     # xrange(start, stop) raises OverflowError in py2.7

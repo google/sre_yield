@@ -18,35 +18,33 @@
 # vim: sw=2 sts=2 et
 
 import os.path
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(THIS_DIR, 'README.rst')).read()
+README = open(os.path.join(THIS_DIR, "README.rst")).read()
 
-VERSION = '1.2'
+VERSION = "1.2"
 
-setup(name='sre_yield',
-      version=VERSION,
-      description='Expands a regular expression to its possible matches',
-      long_description=README,
-      classifiers=[
-          'License :: OSI Approved :: Apache Software License',
-          'Intended Audience :: Developers',
-          'Development Status :: 5 - Production/Stable',
-          'Operating System :: OS Independent',
-      ],
-      keywords='',
-      author='Alex Perry',
-      author_email='alex.perry@google.com',
-      url='https://github.com/google/sre_yield',
-      license='Apache',
-      packages=find_packages('.'),
-      install_requires=[],
-      entry_points={
-          'console_scripts': [
-              'demo_sre_yield=sre_yield:main',
-          ],
-      },
-      test_suite='nose.collector', # doesn't find doctests though
-      tests_require=['nose'],
+setup(
+    name="sre_yield",
+    version=VERSION,
+    description="Expands a regular expression to its possible matches",
+    long_description=README,
+    classifiers=[
+        "License :: OSI Approved :: Apache Software License",
+        "Intended Audience :: Developers",
+        "Development Status :: 5 - Production/Stable",
+        "Operating System :: OS Independent",
+    ],
+    keywords="",
+    author="Alex Perry",
+    author_email="alex.perry@google.com",
+    url="https://github.com/google/sre_yield",
+    license="Apache",
+    packages=find_packages("."),
+    install_requires=[],
+    entry_points={"console_scripts": ["demo_sre_yield=sre_yield:main"]},
+    test_suite="nose.collector",  # doesn't find doctests though
+    tests_require=["nose"],
 )

@@ -23,8 +23,8 @@ The regex is parsed using the SRE module that is standard in python,
 then the data structure is executed to form a bunch of iterators.
 """
 
-__author__ = 'alexperry@google.com (Alex Perry)'
-__all__ = ['Values', 'AllStrings', 'AllMatches', 'ParseError']
+__author__ = "alexperry@google.com (Alex Perry)"
+__all__ = ["Values", "AllStrings", "AllMatches", "ParseError"]
 
 
 import bisect
@@ -36,21 +36,20 @@ import string
 import sys
 import types
 
-from sre_yield import cachingseq
-from sre_yield import fastdivmod
+from sre_yield import cachingseq, fastdivmod
 
 try:
     xrange = xrange
 except NameError:
     xrange = range
 
-_RE_METACHARS = r'$^{}*+\\'
-_ESCAPED_METACHAR = r'\\[' + _RE_METACHARS + r']'
+_RE_METACHARS = r"$^{}*+\\"
+_ESCAPED_METACHAR = r"\\[" + _RE_METACHARS + r"]"
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
 # ASCII by default, see https://github.com/google/sre_yield/issues/3
 CHARSET = [chr(c) for c in range(256)]
 
-WORD = string.ascii_letters + string.digits + '_'
+WORD = string.ascii_letters + string.digits + "_"
 
 try:
     DEFAULT_RE_FLAGS = re.ASCII
@@ -59,8 +58,9 @@ except AttributeError:
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
 
+
 def Not(chars):
-    return ''.join(sorted(set(CHARSET) - set(chars)))
+    return "".join(sorted(set(CHARSET) - set(chars)))
 
 
 CATEGORIES = {
@@ -132,7 +132,9 @@ def _xrange(*args):
 
 def _bigrange(*args):
     if len(args) == 1:
-        start = 0; stop = args[0]; step = 1
+        start = 0
+        stop = args[0]
+        step = 1
     elif len(args) == 2:
         start, stop = args
         step = 1
@@ -163,7 +165,7 @@ class WrappedSequence(object):
 
     def get_item(self, i, d=None):
         i = _adjust_index(i, self.length)
-        if hasattr(self.raw, 'get_item'):
+        if hasattr(self.raw, "get_item"):
             return self.raw.get_item(i, d)
         return self.raw[i]
 
@@ -206,8 +208,9 @@ class SlicedSequence(WrappedSequence):
             self.start, self.stop, self.step = slice_indices(slicer, raw.__len__())
 
         # Integer round up, depending on step direction
-        self.length = ((self.stop - self.start + self.step - _sign(self.step)) /
-                       self.step)
+        self.length = (
+            self.stop - self.start + self.step - _sign(self.step)
+        ) / self.step
 
     def get_item(self, i, d=None):
         j = i * self.step + self.start
@@ -226,7 +229,7 @@ class ConcatenatedSequence(WrappedSequence):
             if i < a_len:
                 return a[i]
             i -= a_len
-        raise IndexError('Too Big')
+        raise IndexError("Too Big")
 
     def __contains__(self, item):
         for a, _ in self.list_lengths:
@@ -235,7 +238,7 @@ class ConcatenatedSequence(WrappedSequence):
         return False
 
     def __repr__(self):
-        return '{concat ' + repr(self.list_lengths) + '}'
+        return "{concat " + repr(self.list_lengths) + "}"
 
 
 class CombinatoricsSequence(WrappedSequence):
@@ -260,14 +263,14 @@ class CombinatoricsSequence(WrappedSequence):
 
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)
-            if hasattr(c, 'get_item'):
+            if hasattr(c, "get_item"):
                 result.append(c.get_item(mod, d))
             else:
                 result.append(c[mod])
-        return ''.join(result)
+        return "".join(result)
 
     def __repr__(self):
-        return '{combin ' + repr(self.list_lengths) + '}'
+        return "{combin " + repr(self.list_lengths) + "}"
 
 
 # Intuition is that this should be around 2**16 to 2**64, but the exact value is
@@ -286,13 +289,17 @@ class RepetitiveSequence(WrappedSequence):
         self.highest = highest
 
         def arbitrary_entry(i):
-            return (fastdivmod.powersum(self.content_length, lowest, i+lowest-1), i+lowest)
+            return (
+                fastdivmod.powersum(self.content_length, lowest, i + lowest - 1),
+                i + lowest,
+            )
 
         def entry_from_prev(i, prev):
             return (prev[0] + (self.content_length ** prev[1]), prev[1] + 1)
 
         self.offsets = cachingseq.CachingFuncSequence(
-            arbitrary_entry, highest - lowest+1, entry_from_prev)
+            arbitrary_entry, highest - lowest + 1, entry_from_prev
+        )
 
         # `offset_break` is an optimization around bisect, which would normally
         # choose the "middle" value to bisect on, which does a lot of work
@@ -306,8 +313,8 @@ class RepetitiveSequence(WrappedSequence):
         # integers and use the standard bisect logic.
 
         if self.offsets[-1][0] > sys.maxsize:
-            for i in range(len(self.offsets)-1):
-                if self.offsets[i+1][0] > sys.maxsize:
+            for i in range(len(self.offsets) - 1):
+                if self.offsets[i + 1][0] > sys.maxsize:
                     self.index_of_offset = i
                     self.offset_break = self.offsets[i][0]
                     return
@@ -318,9 +325,13 @@ class RepetitiveSequence(WrappedSequence):
     def get_item(self, i, d=None):
         """Finds out how many repeats this index implies, then picks strings."""
         if i < self.offset_break:
-            by_bisect = bisect.bisect_left(self.offsets, (i, -1), hi=self.index_of_offset)
+            by_bisect = bisect.bisect_left(
+                self.offsets, (i, -1), hi=self.index_of_offset
+            )
         else:
-            by_bisect = bisect.bisect_left(self.offsets, (i, -1), lo=self.index_of_offset)
+            by_bisect = bisect.bisect_left(
+                self.offsets, (i, -1), lo=self.index_of_offset
+            )
 
         if by_bisect == len(self.offsets) or self.offsets[by_bisect][0] > i:
             by_bisect -= 1
@@ -336,7 +347,7 @@ class RepetitiveSequence(WrappedSequence):
         result = []
 
         if count == 0:
-            return ''
+            return ""
 
         for modulus in fastdivmod.divmod_iter(num, self.content_length):
             result.append(content[modulus])
@@ -347,10 +358,14 @@ class RepetitiveSequence(WrappedSequence):
             result.extend([content[0]] * leftover)
 
         # smallest place value ends up on the right
-        return ''.join(result[::-1])
+        return "".join(result[::-1])
 
     def __repr__(self):
-        return '{repeat base=%d low=%d high=%d}' % (self.content_length, self.lowest, self.highest)
+        return "{repeat base=%d low=%d high=%d}" % (
+            self.content_length,
+            self.lowest,
+            self.highest,
+        )
 
 
 class SaveCaptureGroup(WrappedSequence):
@@ -374,7 +389,7 @@ class ReadCaptureGroup(WrappedSequence):
         if i != 0:
             raise IndexError(i)
         if d is None:
-            raise ValueError('ReadCaptureGroup with no dict')
+            raise ValueError("ReadCaptureGroup with no dict")
         return d.get(self.num, "fail")
 
 
@@ -385,18 +400,16 @@ class RegexMembershipSequence(WrappedSequence):
         return []
 
     def nothing_added(self, *_):
-        return ['']
+        return [""]
 
     def branch_values(self, _, items):
         """Converts SRE parser data into literals and merges those lists."""
-        return ConcatenatedSequence(
-            *[self.sub_values(parsed) for parsed in items])
+        return ConcatenatedSequence(*[self.sub_values(parsed) for parsed in items])
 
     def max_repeat_values(self, min_count, max_count, items):
         """Sequential expansion of the count to be combinatorics."""
         max_count = min(max_count, self.max_count)
-        return RepetitiveSequence(
-            self.sub_values(items), min_count, max_count)
+        return RepetitiveSequence(self.sub_values(items), min_count, max_count)
 
     def in_values(self, items):
         # Special case which distinguishes branch from charset operator
@@ -406,8 +419,7 @@ class RegexMembershipSequence(WrappedSequence):
         return self.branch_values(None, items)
 
     def not_literal(self, y):
-        return self.in_values(((sre_constants.NEGATE,),
-                              (sre_constants.LITERAL, y),))
+        return self.in_values(((sre_constants.NEGATE,), (sre_constants.LITERAL, y)))
 
     def category(self, y):
         return CATEGORIES[y]
@@ -480,7 +492,7 @@ class RegexMembershipSequence(WrappedSequence):
                     self.state = STATE_END
                 elif arguments[0] == sre_constants.AT_NON_BOUNDARY:
                     # This is nonsensical at beginning of string
-                    raise ParseError('Anchor %r found at START state' % (arguments[0],))
+                    raise ParseError("Anchor %r found at START state" % (arguments[0],))
                 # All others (AT_BEGINNING, AT_BEGINNING_STRING, and AT_BOUNDARY) remain in START.
             elif matcher != sre_constants.SUBPATTERN:
                 self.state = STATE_MIDDLE
@@ -488,38 +500,52 @@ class RegexMembershipSequence(WrappedSequence):
         elif self.state == STATE_END:
             if matcher == sre_constants.AT:
                 if arguments[0] not in (
-                    sre_constants.AT_END, sre_constants.AT_END_STRING,
-                    sre_constants.AT_BOUNDARY):
-                    raise ParseError('Anchor %r found at END state' % (arguments[0],))
+                    sre_constants.AT_END,
+                    sre_constants.AT_END_STRING,
+                    sre_constants.AT_BOUNDARY,
+                ):
+                    raise ParseError("Anchor %r found at END state" % (arguments[0],))
                 # those three remain in END
             elif matcher != sre_constants.SUBPATTERN:
-                raise ParseError('Non-end-anchor %r found at END state' % (arguments[0],))
+                raise ParseError(
+                    "Non-end-anchor %r found at END state" % (arguments[0],)
+                )
             # subpattern remains in END
         else:  # self.state == STATE_MIDDLE
             if matcher == sre_constants.AT:
                 if arguments[0] not in (
-                    sre_constants.AT_END, sre_constants.AT_END_STRING,
-                    sre_constants.AT_BOUNDARY):
-                    raise ParseError('Anchor %r found at MIDDLE state' % (arguments[0],))
+                    sre_constants.AT_END,
+                    sre_constants.AT_END_STRING,
+                    sre_constants.AT_BOUNDARY,
+                ):
+                    raise ParseError(
+                        "Anchor %r found at MIDDLE state" % (arguments[0],)
+                    )
                 # All others (AT_END, AT_END_STRING, AT_BOUNDARY) advance to END.
                 self.state = STATE_END
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
-        self.matcher = re.compile(r'(?:%s)\Z' % pattern, flags)
+        self.matcher = re.compile(r"(?:%s)\Z" % pattern, flags)
         if not flags & re.DOTALL:
-            charset = ''.join(c for c in charset if c != '\n')
+            charset = "".join(c for c in charset if c != "\n")
         self.charset = charset
 
         self.named_group_lookup = self.matcher.groupindex
 
-        flags |= DEFAULT_RE_FLAGS # https://github.com/google/sre_yield/issues/3
+        flags |= DEFAULT_RE_FLAGS  # https://github.com/google/sre_yield/issues/3
         if flags & re.IGNORECASE:
-            raise ParseError('Flag "i" not supported. https://github.com/google/sre_yield/issues/4')
+            raise ParseError(
+                'Flag "i" not supported. https://github.com/google/sre_yield/issues/4'
+            )
         elif flags & re.UNICODE:
-            raise ParseError('Flag "u" not supported. https://github.com/google/sre_yield/issues/3')
+            raise ParseError(
+                'Flag "u" not supported. https://github.com/google/sre_yield/issues/3'
+            )
         elif flags & re.LOCALE:
-            raise ParseError('Flag "l" not supported. https://github.com/google/sre_yield/issues/5')
+            raise ParseError(
+                'Flag "l" not supported. https://github.com/google/sre_yield/issues/5'
+            )
 
         if max_count is None:
             self.max_count = MAX_REPEAT_COUNT
@@ -531,7 +557,7 @@ class RegexMembershipSequence(WrappedSequence):
         # Configure the parser backends
         self.backends = {
             sre_constants.LITERAL: lambda y: [chr(y)],
-            sre_constants.RANGE: lambda l, h: [chr(c) for c in range(l, h+1)],
+            sre_constants.RANGE: lambda l, h: [chr(c) for c in range(l, h + 1)],
             sre_constants.SUBPATTERN: self.maybe_save,
             sre_constants.BRANCH: self.branch_values,
             sre_constants.MIN_REPEAT: self.max_repeat_values,
@@ -539,8 +565,7 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.AT: self.nothing_added,
             sre_constants.ASSERT: self.empty_list,
             sre_constants.ASSERT_NOT: self.empty_list,
-            sre_constants.ANY:
-                lambda _: self.in_values(((sre_constants.NEGATE,),)),
+            sre_constants.ANY: lambda _: self.in_values(((sre_constants.NEGATE,),)),
             sre_constants.IN: self.in_values,
             sre_constants.NOT_LITERAL: self.not_literal,
             sre_constants.CATEGORY: self.category,
@@ -574,6 +599,7 @@ class RegexMembershipSequenceMatches(RegexMembershipSequence):
 def AllStrings(regex, flags=0, charset=CHARSET, max_count=None):
     """Constructs an object that will generate all matching strings."""
     return RegexMembershipSequence(regex, flags, charset, max_count=max_count)
+
 
 Values = AllStrings
 
@@ -620,5 +646,5 @@ def main(argv=None):
             print(i)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

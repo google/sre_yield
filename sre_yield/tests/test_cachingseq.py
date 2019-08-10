@@ -33,8 +33,8 @@ class CachingFuncSequenceTest(unittest.TestCase):
         self.assertEqual(2, len(c._cache))
 
         # Make sure .func is settable at runtime...
-        c.func = lambda i: 'bbb'
-        self.assertEqual('bbb', c[1])
+        c.func = lambda i: "bbb"
+        self.assertEqual("bbb", c[1])
         # ...and that we don't call it again.
         self.assertEqual(0, c[0])
 

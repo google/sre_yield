@@ -16,6 +16,7 @@
 #
 # vim: sw=2 sts=2 et
 
+
 class CachingFuncSequence(object):
     def __init__(self, func, length, inc_func=None):
         """
@@ -39,8 +40,8 @@ class CachingFuncSequence(object):
         if v is not None:
             return v
 
-        if self.inc_func and i-1 in self._cache:
-            v = self.inc_func(i, self._cache[i-1])
+        if self.inc_func and i - 1 in self._cache:
+            v = self.inc_func(i, self._cache[i - 1])
         else:
             v = self.func(i)
 

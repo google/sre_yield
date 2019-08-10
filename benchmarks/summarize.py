@@ -17,40 +17,61 @@
 # vim: sw=2 sts=2 et
 
 import sys
+
 import tabulate
+
 
 def cmprow(a, b):
     ret = []
     for ai, bi in zip(a, b):
         if ai == a[-1]:
             # memory
-            ret.append("%+.fkB %+.2f%%" % ((bi-ai), 100.0-(ai/bi*100.0)))
+            ret.append("%+.fkB %+.2f%%" % ((bi - ai), 100.0 - (ai / bi * 100.0)))
         else:
-            ret.append("%+.2fms %+.2f%%" % ((bi-ai)*1000, 100.0-(ai/bi*100.0)))
+            ret.append(
+                "%+.2fms %+.2f%%" % ((bi - ai) * 1000, 100.0 - (ai / bi * 100.0))
+            )
     return tuple(ret)
+
 
 def main(filename):
     # key is (pat, run), value is [all the results]
     known = {}
 
     cols = [
-        "pat", "run", "init", "x[0]", ".", "x[1]", ".", "x[-2]", ".", "x[-1]", ".",
-        "x[:10]", ".", "x[-10:]", ".", "peak_kb"]
+        "pat",
+        "run",
+        "init",
+        "x[0]",
+        ".",
+        "x[1]",
+        ".",
+        "x[-2]",
+        ".",
+        "x[-1]",
+        ".",
+        "x[:10]",
+        ".",
+        "x[-10:]",
+        ".",
+        "peak_kb",
+    ]
     rows = []
 
     with open(filename) as f:
         for line in f:
             if not line.strip():
                 continue
-            parts = line.split('\t')
+            parts = line.split("\t")
             key = tuple(parts[:2])
             vals = list(map(float, parts[2:]))
             known[key] = vals
-            if parts[1] != 'baseline':
+            if parts[1] != "baseline":
                 rows.append(key + cmprow(known[(parts[0], "baseline")], vals))
-            #rows.append(parts)
+            # rows.append(parts)
 
     print(tabulate.tabulate(rows, cols))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(sys.argv[1])

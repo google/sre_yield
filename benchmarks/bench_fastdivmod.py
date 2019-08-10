@@ -16,11 +16,11 @@
 #
 # vim: sw=2 sts=2 et
 
+import math
+import multiprocessing
 import signal
 import sys
-import math
 import time
-import multiprocessing
 import traceback
 
 import fastdivmod
@@ -28,18 +28,21 @@ import fastdivmod
 MIN_TIME = 4.0
 MIN_TRIALS = 3
 
-MULTIPLIER = 1 # for very fast things, tweak > 1
+MULTIPLIER = 1  # for very fast things, tweak > 1
 
 RED = 31
 GREEN = 32
 
+
 def hilite(num, text):
-    return '\033[%dm%s\033[0m' % (num, text)
+    return "\033[%dm%s\033[0m" % (num, text)
+
 
 def consume(it):
     """Simply exhaust the iterator."""
     for _ in it:
         pass
+
 
 def time_trial(func, args, kwargs):
     trials = 0
@@ -52,49 +55,50 @@ def time_trial(func, args, kwargs):
     avg = (t1 - t0) / trials * MULTIPLIER
     return avg
 
+
 def pool_runner(runner_args):
     (trial_type, bignum, a, divisor) = runner_args
-    if trial_type == 'basic':
+    if trial_type == "basic":
         func = fastdivmod.divmod_iter_basic
         args = [bignum, divisor]
-    elif trial_type == 'def':
+    elif trial_type == "def":
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor]
-    elif trial_type == 'auto':
+    elif trial_type == "auto":
         func = fastdivmod.divmod_iter
         args = [bignum, divisor]
-    elif trial_type == 'mult':
+    elif trial_type == "mult":
         chunk = fastdivmod.find_largest_power(sys.maxsize * a, divisor)
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 1:
-            trial_type = '%.2fmi' % (a,)
+            trial_type = "%.2fmi" % (a,)
         else:
-            trial_type = '%dmi' % (a,)
+            trial_type = "%dmi" % (a,)
 
         if chunk <= divisor:
-            return 'n/a', trial_type
+            return "n/a", trial_type
 
-    elif trial_type == 'pow':
+    elif trial_type == "pow":
         chunk = fastdivmod.find_largest_power(sys.maxsize ** a, divisor)
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 0:
-            trial_type = 'mi^%.2f' % (a,)
+            trial_type = "mi^%.2f" % (a,)
         else:
-            trial_type = 'mi^%d' % (a,)
+            trial_type = "mi^%d" % (a,)
 
         if chunk <= divisor:
-            return 'n/a', trial_type
+            return "n/a", trial_type
 
-    elif trial_type == 'dpow':
+    elif trial_type == "dpow":
         chunk = divisor ** a
         func = fastdivmod.divmod_iter_chunking
         args = [bignum, divisor, chunk]
         if a < 0:
-            trial_type = 'd^%.2f' % (a,)
+            trial_type = "d^%.2f" % (a,)
         else:
-            trial_type = 'd^%d' % (a,)
+            trial_type = "d^%d" % (a,)
     try:
         return time_trial(func, args, {}), trial_type
     except Exception as e:
@@ -108,26 +112,29 @@ def init_worker():
 
 
 def main(argv):
-    bignum = 255**20000
+    bignum = 255 ** 20000
     workers = multiprocessing.cpu_count() - 2
 
     for arg in argv:
-        if arg.startswith('n='):
+        if arg.startswith("n="):
             bignum = eval(arg[2:])
-        elif arg.startswith('m='):
-            globals()['MULTIPLIER'] = eval(arg[2:])
-        elif arg.startswith('ncpu='):
+        elif arg.startswith("m="):
+            globals()["MULTIPLIER"] = eval(arg[2:])
+        elif arg.startswith("ncpu="):
             workers = int(arg[5:])
         else:
             raise NotImplementedError("Unknown arg %r" % (arg,))
 
-    print("%d decimal digits, multiplier %d" % (
-        math.log(bignum) / math.log(10), MULTIPLIER))
+    print(
+        "%d decimal digits, multiplier %d"
+        % (math.log(bignum) / math.log(10), MULTIPLIER)
+    )
 
-    divisors = (2, 10, 254, 255, 1024, sys.maxsize, sys.maxsize**2, sys.maxsize**4)
+    divisors = (2, 10, 254, 255, 1024, sys.maxsize, sys.maxsize ** 2, sys.maxsize ** 4)
     best = [sys.maxsize] * len(divisors)
 
-    print("chunk\t", end=' ')
+    print("chunk\t", end=" ")
+
     def trunc(x):
         if len(str(x)) > 6:
             return "%.1e" % (x,)
@@ -158,19 +165,19 @@ def main(argv):
         for result, trial_type in pool.imap(pool_runner, tests_l2, chunksize=2):
             if trial_type != prev_label:
                 if prev_label is not None:
-                    sys.stdout.write('\n')
-                sys.stdout.write('%s\t' % (trial_type,))
+                    sys.stdout.write("\n")
+                sys.stdout.write("%s\t" % (trial_type,))
                 prev_label = trial_type
                 col = 0
 
             if not isinstance(result, str):
                 if result < best[col] and sys.stdout.isatty():
                     best[col] = result
-                    result = hilite(GREEN, '%.05f' % (result,))
+                    result = hilite(GREEN, "%.05f" % (result,))
                 else:
-                    result = '%.05f' % (result,)
+                    result = "%.05f" % (result,)
 
-            sys.stdout.write(result+'\t')
+            sys.stdout.write(result + "\t")
             sys.stdout.flush()
             col += 1
     except KeyboardInterrupt:
@@ -181,5 +188,6 @@ def main(argv):
 
     print()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main(sys.argv[1:])

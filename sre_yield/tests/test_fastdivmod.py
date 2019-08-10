@@ -15,17 +15,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import random
 import itertools
+import random
+import sys
 import unittest
 
 from sre_yield.fastdivmod import (
     divmod_iter,
-    divmod_iter_chunking,
     divmod_iter_basic,
+    divmod_iter_chunking,
+    find_largest_power,
     powersum,
-    find_largest_power
 )
 
 
@@ -34,8 +34,7 @@ class FastDivmodTest(unittest.TestCase):
         inputs = list(range(20))
         outputs = [find_largest_power(n, 2) for n in inputs]
         self.assertEqual(
-            [0, 1, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16],
-            outputs
+            [0, 1, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16], outputs
         )
         for (n, r) in zip(inputs[1:], outputs[1:]):
             self.assertLessEqual(r, n)
@@ -80,17 +79,21 @@ class FastDivmodTest(unittest.TestCase):
     def test_huge_number_2(self):
         bignum = 1162523670191533212890624
 
-        assert 255**11 > bignum
-        v = divmod_iter_chunking(bignum, 255, 255**11)
-        self.assertEqual([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v)))
+        assert 255 ** 11 > bignum
+        v = divmod_iter_chunking(bignum, 255, 255 ** 11)
+        self.assertEqual(
+            [254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v))
+        )
 
-        assert 255**9 < bignum
-        v = divmod_iter_chunking(bignum, 255, 255**9)
-        self.assertEqual([254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v)))
+        assert 255 ** 9 < bignum
+        v = divmod_iter_chunking(bignum, 255, 255 ** 9)
+        self.assertEqual(
+            [254, 254, 254, 254, 254, 254, 254, 254, 254, 254], list(map(int, v))
+        )
 
     def test_huge_number_3(self):
         # this comes from '(?:[a-z]{,100}){,1000}'
-        bignum = '''
+        bignum = """
     139213503685244597631306906207129822718492493625765750638187
     422145221183403064209962632287600238213133585396115931858640
     397088297104215182062999160404977511404583694567955555693092
@@ -115,7 +118,11 @@ class FastDivmodTest(unittest.TestCase):
     852199012031842402809388416425577314128095191867797687492456
     679728567750494783710131249615739065586686514755989308471095
     118505256601463774083310772237026000
-    '''.replace(' ', '').replace('\n', '')
+    """.replace(
+            " ", ""
+        ).replace(
+            "\n", ""
+        )
         bignum = int(bignum)
         bignum2 = 3268647867246256383381332100041691484373976788312974266629140102414955744756908184404049903032490380904202638084876187965749304595652472251350
 
@@ -132,27 +139,31 @@ class FastDivmodTest(unittest.TestCase):
 def test_correctness_big_numbers():
     random.seed(1)
     for _ in range(100):
-        x = random.randint(1, 2**32)
+        x = random.randint(1, 2 ** 32)
         for base in (2, 10, 255, 256):
-            for chunk in (base, base**2, base**3, base**4):
+            for chunk in (base, base ** 2, base ** 3, base ** 4):
                 yield runner, x, base, chunk
 
     for _ in range(10):
-        x = random.randint(1, 2**32) * sys.maxsize ** 6
+        x = random.randint(1, 2 ** 32) * sys.maxsize ** 6
         for base in (2, 10, 255, 256):
-            for chunk in (base, base**2, base**3, base**4):
+            for chunk in (base, base ** 2, base ** 3, base ** 4):
                 yield runner, x, base, chunk
+
 
 def runner(x, base, chunk):
     try:
         zip_longest = itertools.izip_longest
     except AttributeError:
         zip_longest = itertools.zip_longest
-    for i, j in zip_longest(divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)):
+    for i, j in zip_longest(
+        divmod_iter_chunking(x, base, chunk), divmod_iter_basic(x, base)
+    ):
         if i is None:
             print("phooey")
         else:
             assert i == j
+
 
 def test_powersum():
     for base in (1, 2, 7, 256):
@@ -161,9 +172,10 @@ def test_powersum():
         yield powersum_runner, base, 1, 2
         yield powersum_runner, base, 1, 10
         yield powersum_runner, base, 99, 104
-        yield powersum_runner, base, 1, 2**14
+        yield powersum_runner, base, 1, 2 ** 14
+
 
 def powersum_runner(base, low, high):
-    expected = sum([base ** i for i in range(low, high+1)])
+    expected = sum([base ** i for i in range(low, high + 1)])
     actual = powersum(base, low, high)
     assert expected == actual
