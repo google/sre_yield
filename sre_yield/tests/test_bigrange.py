@@ -19,6 +19,7 @@ import unittest
 
 import sre_yield
 
+# fmt: off
 TESTCASES = [
     (5,),
     (1, 5),
@@ -27,6 +28,7 @@ TESTCASES = [
     (10, 1, -1),
     (10, -1, -1),
 ]
+# fmt: on
 
 def test_all():
     for t in TESTCASES:

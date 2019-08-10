@@ -25,7 +25,9 @@ t = os.path.dirname(sys.argv[0])
 root = os.path.abspath(os.path.join(t, '..'))
 sys.path.insert(0, root)
 
-import sre_yield
+if True:
+    import sre_yield  # isort:skip didn't seem to work
+
 
 def first_slice(obj):
     for i in range(10):

@@ -138,12 +138,14 @@ def main(argv):
     pow_factors = (2, 4, 8)
     dpow_factors = (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
 
+    # fmt: off
     tests_l1 = [('basic', bignum, None),
                 ('def', bignum, None),
                 ('auto', bignum, None)] + \
                [('mult', bignum, a) for a in mult_factors] + \
                [('pow', bignum, a) for a in pow_factors] + \
                [('dpow', bignum, a) for a in dpow_factors]
+    # fmt: on
 
     tests_l2 = [t + (d,) for t in tests_l1 for d in divisors]
 

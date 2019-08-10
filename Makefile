@@ -37,3 +37,8 @@ pygments.css:
 .PHONY: bench
 bench:
 	PYTHON=$(PYTHON) ./benchmarks/bench.sh
+
+.PHONY: format
+format:
+	isort --recursive -y sre_yield benchmarks setup.py
+	black sre_yield benchmarks setup.py
