@@ -16,8 +16,6 @@
 #
 # vim: sw=2 sts=2 et
 
-#!/usr/bin/env python2
-
 import copy
 import os
 import sys

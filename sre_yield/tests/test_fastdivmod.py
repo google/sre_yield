@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
 # Copyright 2011-2016 Google Inc.
+# Copyright 2019 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,10 +20,41 @@ import random
 import itertools
 import unittest
 
-from sre_yield.fastdivmod import divmod_iter_chunking, divmod_iter_basic, powersum
+from sre_yield.fastdivmod import (
+    divmod_iter,
+    divmod_iter_chunking,
+    divmod_iter_basic,
+    powersum,
+    find_largest_power
+)
 
 
 class FastDivmodTest(unittest.TestCase):
+    def test_find_largest_power(self):
+        inputs = list(range(20))
+        outputs = [find_largest_power(n, 2) for n in inputs]
+        self.assertEqual(
+            [0, 1, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 16, 16, 16, 16],
+            outputs
+        )
+        for (n, r) in zip(inputs[1:], outputs[1:]):
+            self.assertLessEqual(r, n)
+
+    def test_divmod_iter_switching(self):
+        n = 2 ** 999 - 1
+        count = 0
+        v1 = []
+        for v in divmod_iter(n, 2):
+            count += 1
+            v1.append(v)
+        self.assertEqual(999, count)
+
+        n = 2 ** 5000 - 1
+        count = 0
+        for v in divmod_iter(n, 2):
+            count += 1
+        self.assertEqual(5000, count)
+
     def test_divmod_iter_basic(self):
         v = divmod_iter_basic(1234, 10)
         self.assertEqual([4, 3, 2, 1], list(v))

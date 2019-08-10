@@ -3,3 +3,6 @@
 *.egg-info
 build
 dist
+coverage
+.coverage
+benchmarks/log

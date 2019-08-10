@@ -37,8 +37,6 @@ input string though -- these are cases that ``sre_parse`` did not optimize.
 
     >>> list(sre_yield.AllStrings('a|a'))
     ['a', 'a']
-    >>> list(sre_yield.AllStrings('[aa]'))
-    ['a', 'a']
 
 
 Quirks

@@ -1,5 +1,5 @@
-PYTHON?=python2
-NOSETESTS?=nosetests2
+PYTHON?=python
+NOSETESTS?=nosetests
 TESTOPTS?=-v
 PYLINT?=pylint
 RST2HTML?=rst2html
@@ -16,9 +16,13 @@ doctest: README.rst
 test:
 	@$(NOSETESTS) --with-doctest --doctest-extension=rst $(TESTOPTS)
 
+.PHONY: coverage
+coverage:
+	@$(NOSETESTS) --with-doctest --doctest-extension=rst --with-coverage --cover-package=sre_yield --cover-html --cover-html-dir=coverage
+
 .PHONY: lint
 lint:
-	$(PYLINT) *.py
+	$(PYLINT) *.py sre_yield/*.py
 
 .PHONY: clean
 clean:

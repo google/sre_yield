@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 #
 # Copyright 2011-2016 Google Inc.
+# Copyright 2018-2019 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import codecs
+import io
 import re
 import sys
 import unittest
@@ -148,6 +151,8 @@ class YieldTest(unittest.TestCase):
         self.assertEqual('xax', m.group(0))
         self.assertEqual('a', m.group(1))
         self.assertEqual('a', m.group('foo'))
+        self.assertEqual({"foo": "a"}, m.groupdict())
+        self.assertRaises(NotImplementedError, m.span)
 
     def testBackrefCounts(self):
         parsed = sre_yield.AllStrings(r'([abc])-\1')
@@ -173,6 +178,26 @@ class YieldTest(unittest.TestCase):
         v = sre_yield.AllStrings('.+')
         self.assertGreater(v.__len__(), sys.maxsize)
         self.assertEqual(['\x00', '\x01'], list(v[:2]))
+
+    def testOffset(self):
+        # This was discovered after https://github.com/google/sre_yield/issues/10
+        v = sre_yield.AllStrings('([0-9a-fA-F]{0,4}:){0,5}')
+        l = v.__len__()
+        self.assertTrue(v.__getitem__(l-1))
+
+    def testMain(self):
+        old_sys_stdout = sys.stdout
+
+        # This is for compatibility with python 2.7
+        buf = io.BytesIO()
+        try:
+            sys.stdout = codecs.lookup("utf-8").streamwriter(buf)
+            sre_yield.main(["prog", "x[123]"])
+            value = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_sys_stdout
+
+        self.assertEqual(b"x1\nx2\nx3\n", buf.getvalue())
 
 
 if __name__ == '__main__':
