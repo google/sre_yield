@@ -58,6 +58,36 @@ class YieldTest(unittest.TestCase):
         self.assertSequenceEqual(sre_yield.AllStrings("a[bc]?"), ["a", "ab", "ac"])
         self.assertSequenceEqual(sre_yield.AllStrings("a[bc]??"), ["a", "ab", "ac"])
 
+    def testHttp(self):
+        self.assertSequenceEqual(sre_yield.AllStrings("^http://"), ["http://"])
+
+    def testLookaroundNegativeNop(self):
+        self.assertSequenceEqual(sre_yield.AllStrings("(?!b)c"), ["c"])
+        self.assertSequenceEqual(sre_yield.AllStrings("(?!c)c"), ["c"])
+        self.assertSequenceEqual(sre_yield.AllStrings("(?!b)c?"), ["", "c"])
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?!b)c"), ["ac"])
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?!b)c?"), ["a", "ac"])
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?!b)$"), ["a"])
+
+        self.assertSequenceEqual(sre_yield.AllStrings("(?<!b)c"), ["c"])
+        self.assertSequenceEqual(sre_yield.AllStrings("^(?<!b)c"), ["c"])
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?<!b)c"), ["ac"])
+
+    def testLookaroundPositiveAdd(self):
+        self.assertSequenceEqual(sre_yield.AllStrings("(?<=abc)def"), ["abcdef"])
+        self.assertSequenceEqual(sre_yield.AllStrings("(?<=a|b)def"), ["adef", "bdef"])
+
+    @unittest.expectedFailure
+    def testLookaroundNegativeBugs(self):
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?!b)b"), [])
+        self.assertSequenceEqual(sre_yield.AllStrings("a(?!b)[a-c]"), ["aa", "ac"])
+        self.assertSequenceEqual(sre_yield.AllStrings("[a-c](?<!b)c"), ["ac", "cc"])
+
+    @unittest.expectedFailure
+    def testLookaroundPositiveBugs(self):
+        self.assertSequenceEqual(sre_yield.AllStrings("[a-c](?<=a|b)def"), ["adef", "bdef"])
+        self.assertSequenceEqual(sre_yield.AllStrings("^(?<=abc)def"), [])
+
     def testSlices(self):
         parsed = sre_yield.AllStrings("[abcdef]")
         self.assertSequenceEqual(parsed[::2], list("ace"))
