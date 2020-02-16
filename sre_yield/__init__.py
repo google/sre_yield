@@ -170,6 +170,8 @@ class WrappedSequence(object):
         return self.raw[i]
 
     def __len__(self):
+        if self.length < sys.maxsize:
+            return int(self.length)
         return self.length
 
     def __getitem__(self, i):

@@ -40,7 +40,6 @@ class YieldTest(unittest.TestCase):
         self.assertSequenceEqual(sre_yield.AllStrings("[aeiou]"), list("aeiou"))
         self.assertEqual(len(sre_yield.AllStrings("1.3", flags=re.DOTALL)), 256)
         v = sre_yield.AllStrings("[^-]3[._]1415", flags=re.DOTALL)
-        print(list(v))
         self.assertEqual(len(v), 510)
         self.assertEqual(
             len(sre_yield.AllStrings("(.|5[6-9]|[6-9][0-9])[a-z].?", flags=re.DOTALL)),
@@ -49,8 +48,19 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(len(sre_yield.AllStrings("..", charset="0123456789")), 100)
         self.assertEqual(len(sre_yield.AllStrings("0*")), 65536)
         # For really big lists, we can't use the len() function any more
-        self.assertEqual(sre_yield.AllStrings("0*").__len__(), 65536)
+        with self.assertRaises(OverflowError):
+            len(sre_yield.AllStrings(r"\d+"))
+        with self.assertRaises(OverflowError):
+            len(sre_yield.AllStrings("[01]*"))
         self.assertEqual(sre_yield.AllStrings("[01]*").__len__(), 2 ** 65536 - 1)
+
+    def testLargeSequenceSliceLength(self):
+        self.assertEqual(len(sre_yield.AllStrings(r"\d+")[:16]), 16)
+        self.assertEqual(len(sre_yield.AllStrings(r"(\d+){1}")[:16]), 16)
+        self.assertEqual(len(sre_yield.AllStrings(r"([\d]+){1}")[:16]), 16)
+        self.assertEqual(len(sre_yield.AllStrings(r"([\d]+)?")[:16]), 16)
+        self.assertEqual(len(sre_yield.AllStrings(r"([\d]*){1}")[:16]), 16)
+        self.assertEqual(len(sre_yield.AllStrings(r"\d+", max_count=1)[:16]), 10)
 
     def testAlternationWithEmptyElement(self):
         self.assertSequenceEqual(sre_yield.AllStrings("a(b|c|)"), ["ab", "ac", "a"])
