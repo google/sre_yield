@@ -1,5 +1,3 @@
-#!/usr/bin/env python2
-#
 # Copyright 2011-2016 Google Inc.
 # Copyright 2018-2019 Tim Hatch
 #
@@ -14,8 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# vim: sw=2 sts=2 et
 
 from math import log
 
@@ -56,7 +52,7 @@ def divmod_iter(x, by, chunk=None):
     if hasattr(x, "bit_length"):
         # crude log(2, x)
         divisions = x.bit_length() // by.bit_length()
-    else:
+    else:  # pragma: no cover
         # This code path is intended for ints, but on <2.7 or alternate
         # implementation that does not support bit_length.  It is not covered by
         # current tests.
@@ -78,7 +74,7 @@ def divmod_iter_chunking(x, by, chunk=None):
     if by == 1:
         if x != 0:
             raise ValueError(
-                "x=0 by=1 is allowed as a base case, but no other x may have " "by=1"
+                "x=0 by=1 is allowed as a base case, but no other x may have by=1"
             )
         yield 0
         return

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
 #
@@ -18,6 +18,7 @@ import sys
 import unittest
 
 import sre_yield
+from sre_yield.testing_utils import UnitTest, data_provider
 
 # fmt: off
 TESTCASES = [
@@ -31,23 +32,21 @@ TESTCASES = [
 # fmt: on
 
 
-def test_all():
-    for t in TESTCASES:
-        yield runner, t
+class BigRangeTest(UnitTest):
+    @data_provider([(x,) for x in TESTCASES])
+    def test_all(self, packed_test):
+        expected = list(range(*packed_test))
+        actual = list(sre_yield._bigrange(*packed_test))
+        self.assertEqual(expected, actual)
+
+    def test_bignum(self):
+        # xrange(start, stop) raises OverflowError in py2.7
+        start = sys.maxsize
+        stop = sys.maxsize + 5
+
+        el = list(sre_yield._bigrange(start, stop))
+        self.assertEqual(5, len(el))
 
 
-def runner(packed_test):
-    expected = list(range(*packed_test))
-    print("expected", expected)
-    actual = list(sre_yield._bigrange(*packed_test))
-    print("actual", actual)
-    assert expected == actual
-
-
-def test_bignum():
-    # xrange(start, stop) raises OverflowError in py2.7
-    start = sys.maxsize
-    stop = sys.maxsize + 5
-
-    l = list(sre_yield._bigrange(start, stop))
-    assert len(l) == 5
+if __name__ == "__main__":
+    unittest.main()

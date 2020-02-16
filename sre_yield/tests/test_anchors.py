@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
 #
@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import re
 import unittest
 
 import sre_yield
@@ -65,11 +64,11 @@ class AnchorTest(unittest.TestCase):
         parsed = sre_yield.Values("\\bab\\b")
         self.assertEqual(["ab"], list(parsed))
 
-    def testAnchorsRepeated(self):
+    def testAnchorsRepeatedBeginning(self):
         parsed = sre_yield.Values(r"^\b^[ab]")
         self.assertEqual(["a", "b"], list(parsed))
 
-    def testAnchorsRepeated(self):
+    def testAnchorsRepeatedEnd(self):
         parsed = sre_yield.Values(r"[ab]$\b$")
         self.assertEqual(["a", "b"], list(parsed))
 
