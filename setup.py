@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
-# Copyright 2018 Tim Hatch
+# Copyright 2018-2020 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# vim: sw=2 sts=2 et
 
 import os.path
 
@@ -24,7 +22,7 @@ from setuptools import find_packages, setup
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(THIS_DIR, "README.rst")).read()
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 setup(
     name="sre_yield",
@@ -45,6 +43,5 @@ setup(
     packages=find_packages("."),
     install_requires=[],
     entry_points={"console_scripts": ["demo_sre_yield=sre_yield:main"]},
-    test_suite="nose.collector",  # doesn't find doctests though
-    tests_require=["nose"],
+    requires_python=">=3.6",
 )

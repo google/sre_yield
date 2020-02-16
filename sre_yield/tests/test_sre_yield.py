@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
 # Copyright 2018-2019 Tim Hatch
@@ -189,8 +189,8 @@ class YieldTest(unittest.TestCase):
     def testOffset(self):
         # This was discovered after https://github.com/google/sre_yield/issues/10
         v = sre_yield.AllStrings("([0-9a-fA-F]{0,4}:){0,5}")
-        l = v.__len__()
-        self.assertTrue(v.__getitem__(l - 1))
+        el = v.__len__()
+        self.assertTrue(v.__getitem__(el - 1))
 
     def testMain(self):
         old_sys_stdout = sys.stdout
@@ -200,7 +200,6 @@ class YieldTest(unittest.TestCase):
         try:
             sys.stdout = codecs.lookup("utf-8").streamwriter(buf)
             sre_yield.main(["prog", "x[123]"])
-            value = sys.stdout.getvalue()
         finally:
             sys.stdout = old_sys_stdout
 

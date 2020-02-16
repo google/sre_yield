@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
 #
@@ -59,3 +59,7 @@ class CachingFuncSequenceTest(unittest.TestCase):
 
         c = cachingseq.CachingFuncSequence(first_func, 10, inc_func)
         self.assertEqual([1, 2, 4, 8, 16, 32, 64, 128, 256, 512], list(c))
+
+
+if __name__ == "__main__":
+    unittest.main()

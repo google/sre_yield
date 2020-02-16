@@ -1,12 +1,17 @@
 PYTHON?=python
 NOSETESTS?=nosetests
-TESTOPTS?=-v
-PYLINT?=pylint
+TESTOPTS?=
+FLAKE8?=flake8
 RST2HTML?=rst2html
 PYGMENTIZE?=pygmentize
+SOURCES=sre_yield setup.py
 
 .PHONY: all
 all:
+
+.PHONY: setup
+setup:
+	$(PYTHON) -m pip install -Ur requirements-dev.txt
 
 .PHONY: doctest
 doctest: README.rst
@@ -14,19 +19,16 @@ doctest: README.rst
 
 .PHONY: test
 test:
-	@$(NOSETESTS) --with-doctest --doctest-extension=rst $(TESTOPTS)
-
-.PHONY: coverage
-coverage:
-	@$(NOSETESTS) --with-doctest --doctest-extension=rst --with-coverage --cover-package=sre_yield --cover-html --cover-html-dir=coverage
+	$(PYTHON) -m coverage run -m sre_yield.tests $(TESTOPTS)
+	$(PYTHON) -m coverage report
 
 .PHONY: lint
 lint:
-	$(PYLINT) *.py sre_yield/*.py
+	$(FLAKE8) $(SOURCES)
 
 .PHONY: clean
 clean:
-	rm -f *.py[co]
+	find sre_yield -name '*.py[co]' -delete
 
 pygments.css:
 	$(PYGMENTIZE) -S emacs -f html > $@
@@ -42,3 +44,9 @@ bench:
 format:
 	isort --recursive -y sre_yield benchmarks setup.py
 	black sre_yield benchmarks setup.py
+
+.PHONY: release
+release:
+	rm -rf dist
+	$(PYTHON) setup.py sdist bdist_wheel
+	twine upload dist/*

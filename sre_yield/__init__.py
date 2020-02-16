@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 2011-2016 Google Inc.
-# Copyright 2018 Tim Hatch
+# Copyright 2018-2020 Tim Hatch
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# vim: sw=2 sts=2 et
 
 """This module can generate all strings that match a regular expression.
 
@@ -28,13 +26,11 @@ __all__ = ["Values", "AllStrings", "AllMatches", "ParseError"]
 
 
 import bisect
-import math
 import re
 import sre_constants
 import sre_parse
 import string
 import sys
-import types
 
 from sre_yield import cachingseq, fastdivmod
 
@@ -53,7 +49,7 @@ WORD = string.ascii_letters + string.digits + "_"
 
 try:
     DEFAULT_RE_FLAGS = re.ASCII
-except AttributeError:
+except AttributeError:  # pragma: no cover (py2?)
     DEFAULT_RE_FLAGS = 0
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
@@ -126,11 +122,12 @@ def _xrange(*args):
     # prefer real xrange if it works
     try:
         return xrange(*args)
-    except OverflowError:
+    except OverflowError:  # pragma: no cover
         return _bigrange(*args)
 
 
-def _bigrange(*args):
+def _bigrange(*args):  # pragma: no cover
+    # Py2 only
     if len(args) == 1:
         start = 0
         stop = args[0]
@@ -212,7 +209,7 @@ class SlicedSequence(WrappedSequence):
         # Integer round up, depending on step direction
         self.length = (
             self.stop - self.start + self.step - _sign(self.step)
-        ) / self.step
+        ) // self.step
 
     def get_item(self, i, d=None):
         j = i * self.step + self.start
@@ -275,8 +272,9 @@ class CombinatoricsSequence(WrappedSequence):
         return "{combin " + repr(self.list_lengths) + "}"
 
 
-# Intuition is that this should be around 2**16 to 2**64, but the exact value is
-# not important.
+# Intuition is that this should be around 2**16 to 2**64, because math that
+# fits in the native int is going to be very fast; but the exact value is not
+# important.
 OFFSET_BREAK_THRESHOLD = sys.maxsize
 
 
@@ -314,9 +312,9 @@ class RepetitiveSequence(WrappedSequence):
         # that will result in a big penalty as we get into arbitrary-precision
         # integers and use the standard bisect logic.
 
-        if self.offsets[-1][0] > sys.maxsize:
+        if self.offsets[-1][0] > OFFSET_BREAK_THRESHOLD:
             for i in range(len(self.offsets) - 1):
-                if self.offsets[i + 1][0] > sys.maxsize:
+                if self.offsets[i + 1][0] > OFFSET_BREAK_THRESHOLD:
                     self.index_of_offset = i
                     self.offset_break = self.offsets[i][0]
                     return
@@ -388,9 +386,9 @@ class ReadCaptureGroup(WrappedSequence):
         self.length = 1
 
     def get_item(self, i, d=None):
-        if i != 0:
+        if i != 0:  # pragma: no cover
             raise IndexError(i)
-        if d is None:
+        if d is None:  # pramga: no cover
             raise ValueError("ReadCaptureGroup with no dict")
         return d.get(self.num, "fail")
 
@@ -461,7 +459,7 @@ class RegexMembershipSequence(WrappedSequence):
                 self.check_anchor_state(matcher, arguments)
                 return self.backends[matcher](*arguments)
         # No idea what to do here
-        raise ParseError(repr(parsed))
+        raise ParseError(repr(parsed))  # pragma: no cover
 
     def maybe_save(self, *args):
         # Python 3.6 has group, add_flags, del_flags, parsed
