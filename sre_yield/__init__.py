@@ -402,6 +402,11 @@ class RegexMembershipSequence(WrappedSequence):
     def nothing_added(self, *_):
         return [""]
 
+    def lookaround_parse_error(self, *_):
+        raise ParseError(
+            "Lookarounds are not supported, try relaxed=True and postprocess"
+        )
+
     def branch_values(self, _, items):
         """Converts SRE parser data into literals and merges those lists."""
         return ConcatenatedSequence(*[self.sub_values(parsed) for parsed in items])
@@ -456,7 +461,8 @@ class RegexMembershipSequence(WrappedSequence):
             if not isinstance(arguments, tuple):
                 arguments = (arguments,)
             if matcher in self.backends:
-                self.check_anchor_state(matcher, arguments)
+                if not self.relaxed:
+                    self.check_anchor_state(matcher, arguments)
                 return self.backends[matcher](*arguments)
         # No idea what to do here
         raise ParseError(repr(parsed))  # pragma: no cover
@@ -524,12 +530,15 @@ class RegexMembershipSequence(WrappedSequence):
                 # All others (AT_END, AT_END_STRING, AT_BOUNDARY) advance to END.
                 self.state = STATE_END
 
-    def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
+    def __init__(
+        self, pattern, flags=0, charset=CHARSET, max_count=None, relaxed=False
+    ):
         # If the RE module cannot compile it, we give up quickly
         self.matcher = re.compile(r"(?:%s)\Z" % pattern, flags)
         if not flags & re.DOTALL:
             charset = "".join(c for c in charset if c != "\n")
         self.charset = charset
+        self.relaxed = relaxed
 
         self.named_group_lookup = self.matcher.groupindex
 
@@ -563,14 +572,22 @@ class RegexMembershipSequence(WrappedSequence):
             sre_constants.MIN_REPEAT: self.max_repeat_values,
             sre_constants.MAX_REPEAT: self.max_repeat_values,
             sre_constants.AT: self.nothing_added,
-            sre_constants.ASSERT: self.empty_list,
-            sre_constants.ASSERT_NOT: self.empty_list,
+            sre_constants.ASSERT: self.lookaround_parse_error,
+            sre_constants.ASSERT_NOT: self.lookaround_parse_error,
             sre_constants.ANY: lambda _: self.in_values(((sre_constants.NEGATE,),)),
             sre_constants.IN: self.in_values,
             sre_constants.NOT_LITERAL: self.not_literal,
             sre_constants.CATEGORY: self.category,
             sre_constants.GROUPREF: self.groupref,
         }
+        if self.relaxed:
+            self.backends.update(
+                {
+                    sre_constants.ASSERT: self.nothing_added,
+                    sre_constants.ASSERT_NOT: self.nothing_added,
+                }
+            )
+
         self.state = STATE_START
         # Now build a generator that knows all possible patterns
         self.raw = self.sub_values(sre_parse.parse(pattern, flags))
@@ -596,9 +613,11 @@ class RegexMembershipSequenceMatches(RegexMembershipSequence):
         return Match(s, d, self.named_group_lookup)
 
 
-def AllStrings(regex, flags=0, charset=CHARSET, max_count=None):
+def AllStrings(regex, flags=0, charset=CHARSET, max_count=None, relaxed=False):
     """Constructs an object that will generate all matching strings."""
-    return RegexMembershipSequence(regex, flags, charset, max_count=max_count)
+    return RegexMembershipSequence(
+        regex, flags, charset, max_count=max_count, relaxed=relaxed
+    )
 
 
 Values = AllStrings
@@ -632,9 +651,11 @@ class Match(object):
         raise NotImplementedError()
 
 
-def AllMatches(regex, flags=0, charset=CHARSET, max_count=None):
+def AllMatches(regex, flags=0, charset=CHARSET, max_count=None, relaxed=False):
     """Constructs an object that will generate all matching strings."""
-    return RegexMembershipSequenceMatches(regex, flags, charset, max_count=max_count)
+    return RegexMembershipSequenceMatches(
+        regex, flags, charset, max_count=max_count, relaxed=relaxed
+    )
 
 
 def main(argv=None):

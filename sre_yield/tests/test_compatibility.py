@@ -40,6 +40,7 @@ class CompatibilityTest(UnitTest):
         pat: str,
         max_length: int,
         expected_failure: bool = False,
+        relaxed: bool = False,
         m: Optional[List[str]] = None,
     ):
         # If this changes, some examples will need to be updated, especially
@@ -55,12 +56,16 @@ class CompatibilityTest(UnitTest):
             [
                 x
                 for x in sre_yield.AllStrings(
-                    pat, charset=charset, max_count=max_length
+                    pat, charset=charset, max_count=max_length, relaxed=relaxed
                 )
                 if len(x) <= max_length
             ],
             key=lambda i: (len(i), i),
         )
+        if relaxed:
+            # This test has no guardrails against having way too many matches
+            # that the caller should filter.
+            actual = [x for x in actual if pat_re.fullmatch(x)]
 
         # These document current behavior, even when it's wrong, and when they
         # start passing we want to know.
@@ -112,6 +117,34 @@ class CompatibilityTest(UnitTest):
     )
     def test_anchors(self, pat: str, max_length: int) -> None:
         self._verify(pat, max_length)
+
+    @data_provider(
+        (
+            {"pat": r"(?=a)a", "max_length": 2},
+            {"pat": r"(?=a)a.", "max_length": 2},
+            {"pat": r"(?=a)b", "max_length": 2},
+            {"pat": r"(?=a).{3}", "max_length": 3},
+            {"pat": r"(?!a)a", "max_length": 2},
+            {"pat": r"(?!a)a.", "max_length": 2},
+            {"pat": r"(?!a)b", "max_length": 2},
+        )
+    )
+    def test_lookahead(
+        self, pat: str, max_length: int, expected_failure: bool = False
+    ) -> None:
+        self._verify(pat, max_length, expected_failure, relaxed=True)
+
+    @data_provider(
+        (
+            {"pat": r"\b.", "max_length": 2},
+            {"pat": r"[a-]\b[a-]", "max_length": 2, "m": ["-a", "a-"]},
+            {"pat": r"^.", "max_length": 2, "m": ["-", "a", "b", "c"]},
+            # This only passes because _verify does filtering
+            {"pat": r"^\b.", "max_length": 2, "m": ["a", "b", "c"]},
+        )
+    )
+    def test_boundary(self, **kwargs) -> None:
+        self._verify(relaxed=True, **kwargs)
 
 
 if __name__ == "__main__":
