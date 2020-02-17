@@ -110,6 +110,42 @@ This even works for simplistic backreferences, in this case to have matching quo
     '000'
 
 
+Anchors and Lookaround
+======================
+
+Some very simple anchors are supported out of the box, to enable parsing
+patterns where the anchors are actually redundant with it being fullmatch, such
+as ``^foo$``.  More complex anchoring should raise an exception at parse time,
+as will any use of lookaround.  (``\b`` is supported at beginning/end despite
+this being not quite correct.)
+
+.. code-block:: pycon
+
+    >>> list(sre_yield.AllStrings('foo$'))
+    ['foo']
+    >>> list(sre_yield.AllStrings('^$'))
+    ['']
+    >>> list(sre_yield.AllStrings('.\\b.'))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ...
+    ParseError: Non-end-anchor None found at END state
+
+Supporting these in a limited way is possible, but I haven't found the time in
+6+ years to implement it, because I don't have a need.  Instead if you need
+these and don't mind (potentially many) extra matches, provide ``relaxed=True`` to
+pretend these don't exist, at which point the values returned by ``sre_yield``
+will be a superset of the true matches, and you can postprocess them yourself.
+
+.. code-block:: pycon
+
+    >>> pattern = '.\\b.'
+    >>> values = list(sre_yield.AllStrings(pattern, charset='a-', relaxed=True))
+    >>> values
+    ['aa', '-a', 'a-', '--']
+    >>> [v for v in values if re.fullmatch(pattern, v)]
+    ['-a', 'a-']
+
+
 Reporting Bugs, etc.
 ====================
 
@@ -201,15 +237,3 @@ other exceptions:
   yet this appears to work fine.
 - Order does not depend on greediness.
 - The regex is treated as fullmatch.
-- ``sre_yield`` is confused by complex uses of anchors, but support simple ones:
-
-  .. code-block:: pycon
-
-      >>> list(sre_yield.AllStrings('foo$'))
-      ['foo']
-      >>> list(sre_yield.AllStrings('^$'))
-      ['']
-      >>> list(sre_yield.AllStrings('.\\b.'))  # doctest: +IGNORE_EXCEPTION_DETAIL
-      Traceback (most recent call last):
-      ...
-      ParseError: Non-end-anchor None found at END state
