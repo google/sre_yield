@@ -27,6 +27,7 @@ __all__ = ["Values", "AllStrings", "AllMatches", "ParseError"]
 
 import bisect
 import re
+import sre_compile
 import sre_constants
 import sre_parse
 import string
@@ -526,7 +527,9 @@ class RegexMembershipSequence(WrappedSequence):
 
     def __init__(self, pattern, flags=0, charset=CHARSET, max_count=None):
         # If the RE module cannot compile it, we give up quickly
-        self.matcher = re.compile(r"(?:%s)\Z" % pattern, flags)
+        if not isinstance(pattern, sre_parse.SubPattern):
+            pattern = sre_parse.parse(pattern, flags)
+        self.matcher = sre_compile.compile(pattern, flags)
         if not flags & re.DOTALL:
             charset = "".join(c for c in charset if c != "\n")
         self.charset = charset
@@ -573,13 +576,13 @@ class RegexMembershipSequence(WrappedSequence):
         }
         self.state = STATE_START
         # Now build a generator that knows all possible patterns
-        self.raw = self.sub_values(sre_parse.parse(pattern, flags))
+        self.raw = self.sub_values(pattern)
         # Configure this class instance to know about that result
         self.length = self.raw.__len__()
 
     def __contains__(self, item):
         # Since we have a regex, we can search the list really cheaply
-        return self.matcher.match(item) is not None
+        return self.matcher.fullmatch(item) is not None
 
 
 class RegexMembershipSequenceMatches(RegexMembershipSequence):

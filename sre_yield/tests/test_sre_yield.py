@@ -18,6 +18,7 @@
 import codecs
 import io
 import re
+import sre_parse
 import sys
 import unittest
 
@@ -110,6 +111,28 @@ class YieldTest(unittest.TestCase):
 
     def testContains(self):
         parsed = sre_yield.AllStrings("[01]+")
+        self.assertTrue("0101" in parsed)
+        self.assertFalse("0201" in parsed)
+
+    def testPreparsedInstantiation(self):
+        self.assertSequenceEqual(sre_yield.AllStrings(r"(?:[aeiou])\Z"), list("aeiou"))
+        preparsed = sre_parse.parse("[aeiou]")
+        self.assertSequenceEqual(sre_yield.AllStrings(preparsed), list("aeiou"))
+        preparsed = sre_parse.parse(r"(?:[aeiou])\Z")
+        self.assertSequenceEqual(sre_yield.AllStrings(preparsed), list("aeiou"))
+
+        preparsed = sre_parse.parse("[01]+")
+        parsed = sre_yield.AllStrings(preparsed)
+        self.assertTrue("0101" in parsed)
+        self.assertFalse("0201" in parsed)
+
+        preparsed = sre_parse.parse("[01]+")
+        parsed = sre_yield.AllStrings(preparsed)
+        self.assertTrue("0101" in parsed)
+        self.assertFalse("0201" in parsed)
+
+        preparsed = sre_parse.parse(r"(?:[01]+)\Z")
+        parsed = sre_yield.AllStrings(preparsed)
         self.assertTrue("0101" in parsed)
         self.assertFalse("0201" in parsed)
 
