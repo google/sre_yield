@@ -15,11 +15,6 @@
 
 from math import log
 
-try:
-    long = long  # py2.7 compat
-except NameError:
-    long = int
-
 __all__ = ["divmod_iter", "find_largest_power", "powersum"]
 
 
@@ -39,11 +34,11 @@ def divmod_iter(x, by, chunk=None):
     """
     Generate successive (x % by); x /= by
     """
-    if not isinstance(x, (int, long)):
+    if not isinstance(x, int):
         raise TypeError("`x` must be an int")
-    if not isinstance(by, (int, long)):
+    if not isinstance(by, int):
         raise TypeError("`by` must be an int")
-    if chunk is not None and not isinstance(chunk, (int, long)):
+    if chunk is not None and not isinstance(chunk, int):
         raise TypeError("`chunk` must be an int")
 
     if x < by:

@@ -21,7 +21,7 @@ import sre_yield
 from sre_yield.testing_utils import UnitTest, data_provider
 
 
-class ExtractSliceType(object):
+class ExtractSliceType:
     """
     This exists so we can index obj[a:b:c] and get back a slice type without
     worrying about whether its arguments get mangled.

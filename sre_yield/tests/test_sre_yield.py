@@ -218,15 +218,14 @@ class YieldTest(unittest.TestCase):
     def testMain(self):
         old_sys_stdout = sys.stdout
 
-        # This is for compatibility with python 2.7
-        buf = io.BytesIO()
+        buf = io.StringIO()
         try:
-            sys.stdout = codecs.lookup("utf-8").streamwriter(buf)
+            sys.stdout = buf
             sre_yield.main(["prog", "x[123]"])
         finally:
             sys.stdout = old_sys_stdout
 
-        self.assertEqual(b"x1\nx2\nx3\n", buf.getvalue())
+        self.assertEqual("x1\nx2\nx3\n", buf.getvalue())
 
 
 if __name__ == "__main__":
