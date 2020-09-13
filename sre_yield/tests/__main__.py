@@ -1,7 +1,6 @@
 import unittest
 
 from sre_yield.tests.test_anchors import AnchorTest  # noqa: F401
-from sre_yield.tests.test_bigrange import BigRangeTest  # noqa: F401
 from sre_yield.tests.test_cachingseq import CachingFuncSequenceTest  # noqa: F401
 from sre_yield.tests.test_compatibility import (  # noqa: F401
     CompatibilityTest,

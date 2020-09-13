@@ -35,11 +35,6 @@ import sys
 
 from sre_yield import cachingseq, fastdivmod
 
-try:
-    xrange = xrange
-except NameError:
-    xrange = range
-
 _RE_METACHARS = r"$^{}*+\\"
 _ESCAPED_METACHAR = r"\\[" + _RE_METACHARS + r"]"
 ESCAPED_METACHAR_RE = re.compile(_ESCAPED_METACHAR)
@@ -48,10 +43,7 @@ CHARSET = [chr(c) for c in range(256)]
 
 WORD = string.ascii_letters + string.digits + "_"
 
-try:
-    DEFAULT_RE_FLAGS = re.ASCII
-except AttributeError:  # pragma: no cover (py2?)
-    DEFAULT_RE_FLAGS = 0
+DEFAULT_RE_FLAGS = re.ASCII
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
 
@@ -118,40 +110,7 @@ def _adjust_index(n, size):
     return n
 
 
-def _xrange(*args):
-    """Because xrange doesn't support longs :("""
-    # prefer real xrange if it works
-    try:
-        return xrange(*args)
-    except OverflowError:  # pragma: no cover
-        return _bigrange(*args)
-
-
-def _bigrange(*args):  # pragma: no cover
-    # Py2 only
-    if len(args) == 1:
-        start = 0
-        stop = args[0]
-        step = 1
-    elif len(args) == 2:
-        start, stop = args
-        step = 1
-    elif len(args) == 3:
-        start, stop, step = args
-    else:
-        raise ValueError("Too many args for _bigrange")
-
-    i = start
-    while True:
-        yield i
-        i += step
-        if step < 0 and i <= stop:
-            break
-        if step > 0 and i >= stop:
-            break
-
-
-class WrappedSequence(object):
+class WrappedSequence:
     """This wraps a sequence, purely as a base clase for the other uses."""
 
     def __init__(self, raw):
@@ -185,7 +144,7 @@ class WrappedSequence(object):
         return self.get_item(i)
 
     def __iter__(self):
-        for i in _xrange(int(self.length)):
+        for i in range(int(self.length)):
             yield self.get_item(i)
 
 
@@ -372,10 +331,10 @@ class RepetitiveSequence(WrappedSequence):
 class SaveCaptureGroup(WrappedSequence):
     def __init__(self, parsed, key):
         self.key = key
-        super(SaveCaptureGroup, self).__init__(parsed)
+        super().__init__(parsed)
 
     def get_item(self, n, d=None):
-        rv = super(SaveCaptureGroup, self).get_item(n, d)
+        rv = super().get_item(n, d)
         if d is not None:
             d[self.key] = rv
         return rv
@@ -443,9 +402,9 @@ class RegexMembershipSequence(WrappedSequence):
         if self.has_groupref or d is not None:
             if d is None:
                 d = {}
-            return super(RegexMembershipSequence, self).get_item(i, d)
+            return super().get_item(i, d)
         else:
-            return super(RegexMembershipSequence, self).get_item(i)
+            return super().get_item(i)
 
     def sub_values(self, parsed):
         """This knows how to convert one piece of parsed pattern."""
@@ -612,7 +571,7 @@ class RegexMembershipSequenceMatches(RegexMembershipSequence):
             return result
 
         d = {}
-        s = super(RegexMembershipSequenceMatches, self).get_item(i, d)
+        s = super().get_item(i, d)
         return Match(s, d, self.named_group_lookup)
 
 
@@ -626,7 +585,7 @@ def AllStrings(regex, flags=0, charset=CHARSET, max_count=None, relaxed=False):
 Values = AllStrings
 
 
-class Match(object):
+class Match:
     def __init__(self, string, groups, named_groups):
         # TODO keep group(0) only, and spans for the rest.
         self._string = string

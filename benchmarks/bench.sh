@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-: ${PYTHON:=python2}
+: ${PYTHON:=python3}
 : ${NAME:=blah}
 
 for pattern in '[01]{,10}' '\d+' '.*' '.*.*.*' '(?:[a-z]{,10}){,1000}' '(?:[a-z]{,100}){,1000}' '(?:(?:[a-z]{,100}){,100}){,100}'; do

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-class CachingFuncSequence(object):
+class CachingFuncSequence:
     def __init__(self, func, length, inc_func=None):
         """
         length: Length of this sequence.
