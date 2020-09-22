@@ -161,6 +161,14 @@ class YieldTest(unittest.TestCase):
         parsed = sre_yield.AllStrings("[01]+", max_count=4)
         self.assertEqual("1111", parsed[-1])
 
+    def testMinCount(self):
+        parsed = sre_yield.AllStrings(r"\d{0}")
+        self.assertEqual([""], list(parsed))
+        parsed = sre_yield.AllStrings(r"\d{2}")
+        self.assertEqual("99", parsed[-1])
+        parsed = sre_yield.AllStrings(r"\d{2}", max_count=1)
+        self.assertEqual("99", parsed[-1])
+
     def testParseErrors(self):
         self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, "a", re.I)
         self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, "a", re.U)
