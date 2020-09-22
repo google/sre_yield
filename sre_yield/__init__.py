@@ -615,7 +615,7 @@ class Match:
 
 
 def AllMatches(regex, flags=0, charset=CHARSET, max_count=None, relaxed=False):
-    """Constructs an object that will generate all matching strings."""
+    """Constructs Match objects for all matching strings."""
     return RegexMembershipSequenceMatches(
         regex, flags, charset, max_count=max_count, relaxed=relaxed
     )
