@@ -374,6 +374,7 @@ class RegexMembershipSequence(WrappedSequence):
     def max_repeat_values(self, min_count, max_count, items):
         """Sequential expansion of the count to be combinatorics."""
         max_count = min(max_count, self.max_count)
+        max_count = max(max_count, min_count)
         return RepetitiveSequence(self.sub_values(items), min_count, max_count)
 
     def in_values(self, items):
