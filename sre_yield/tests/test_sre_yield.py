@@ -229,6 +229,7 @@ class YieldTest(unittest.TestCase):
         )
         self.assertEqual(["aa", "ab", "ba", "bb"], [x for x in parsed])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(0) for x in parsed[:]])
+        self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
 
     def testAllStringsIsValues(self):
         self.assertEqual(sre_yield.AllStrings, sre_yield.Values)
