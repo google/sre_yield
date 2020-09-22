@@ -59,6 +59,8 @@ CATEGORIES = {
     sre_constants.CATEGORY_NOT_DIGIT: Not(string.digits),
     sre_constants.CATEGORY_SPACE: string.whitespace,
     sre_constants.CATEGORY_NOT_SPACE: Not(string.whitespace),
+    sre_constants.CATEGORY_LINEBREAK: "\n",
+    sre_constants.CATEGORY_NOT_LINEBREAK: Not("\n"),
 }
 
 # This constant varies between builds of Python; this is the lower value.
@@ -380,14 +382,15 @@ class RegexMembershipSequence(WrappedSequence):
         # Special case which distinguishes branch from charset operator
         if items and items[0][0] == sre_constants.NEGATE:
             items = self.branch_values(None, items[1:])
-            return [item for item in self.charset if item not in items]
+            charset = self.category(sre_constants.CATEGORY_NOT_LINEBREAK)
+            return [item for item in charset if item not in items]
         return self.branch_values(None, items)
 
     def not_literal(self, y):
         return self.in_values(((sre_constants.NEGATE,), (sre_constants.LITERAL, y)))
 
     def category(self, y):
-        return CATEGORIES[y]
+        return self.categories[y]
 
     def groupref(self, n):
         self.has_groupref = True
@@ -497,9 +500,19 @@ class RegexMembershipSequence(WrappedSequence):
         if not isinstance(pattern, sre_parse.SubPattern):
             pattern = sre_parse.parse(pattern, flags)
         self.matcher = sre_compile.compile(pattern, flags)
-        if not flags & re.DOTALL:
-            charset = "".join(c for c in charset if c != "\n")
-        self.charset = charset
+        self.categories = CATEGORIES.copy()
+        if flags & re.DOTALL:
+            self.categories[sre_constants.CATEGORY_LINEBREAK] = ""
+            self.categories[sre_constants.CATEGORY_NOT_LINEBREAK] = CHARSET
+
+        if isinstance(charset, dict):
+            self.categories.update(charset)
+
+        elif charset != CHARSET:
+            if not flags & re.DOTALL:
+                charset = "".join(c for c in charset if c != "\n")
+            self.categories[sre_constants.CATEGORY_NOT_LINEBREAK] = charset
+
         self.relaxed = relaxed
 
         self.named_group_lookup = self.matcher.groupindex
