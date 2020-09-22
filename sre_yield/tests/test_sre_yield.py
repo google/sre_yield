@@ -17,6 +17,7 @@
 
 import io
 import re
+import sre_constants
 import sre_parse
 import sys
 import unittest
@@ -207,6 +208,49 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(["a-a", "b-b", "c-c", "d-d"], [x for x in parsed])
         self.assertEqual(["a-a", "b-b"], [x.group(0) for x in parsed[:2]])
         self.assertEqual(["a", "b"], [x.group(1) for x in parsed[:2]])
+
+    def testCustomRepeater(self):
+        sample_codes = ["au", "us", "eu"]
+
+        class DomainExpander(sre_yield.SlicedSequence):
+            # Expand any \w\w pattern to be a country domain code
+            def __init__(self, content, lowest=1, highest=1):
+                if content.__len__() == len(
+                    sre_yield.CATEGORIES[sre_constants.CATEGORY_WORD]
+                ):
+                    if (
+                        "".join(iter(content))
+                        == sre_yield.CATEGORIES[sre_constants.CATEGORY_WORD]
+                    ):
+                        if lowest == 2 and highest == 2:
+                            super().__init__(sample_codes)
+                            return
+
+                real = sre_yield.RepetitiveSequence(content, lowest, highest)
+                super().__init__(real)
+
+        class CustomStrings(sre_yield.RegexMembershipSequence):
+            _RepetitiveSequence = DomainExpander
+
+            def __init__(
+                self,
+                pattern,
+                flags=0,
+                charset=sre_yield.CHARSET,
+                max_count=None,
+                relaxed=False,
+                simplify=False,
+            ):
+                if simplify:
+                    from sre_tools.simplify import simplify_regex
+
+                    pattern = simplify_regex(pattern)
+                super().__init__(pattern, flags, charset, max_count, relaxed)
+
+        self.assertEqual(list(CustomStrings(r"\w{2}")), sample_codes)
+        self.assertEqual(
+            list(CustomStrings(r"\w\w", simplify=True)), sample_codes
+        )
 
     def testSlicingMatchesMultichar(self):
         parsed = sre_yield.AllMatches("z([ab]{2})")

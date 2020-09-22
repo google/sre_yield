@@ -325,6 +325,12 @@ class RepetitiveSequence(WrappedSequence):
         )
 
 
+class SamplingRepetitiveSequence(SlicedSequence):
+    def __init__(self, content, lowest=1, highest=1):
+        real = RepetitiveSequence(content, lowest, highest)
+        super().__init__(real, slicer=slice(0, 2))
+
+
 class SaveCaptureGroup(WrappedSequence):
     def __init__(self, parsed, key):
         self.key = key
@@ -353,6 +359,8 @@ class ReadCaptureGroup(WrappedSequence):
 class RegexMembershipSequence(WrappedSequence):
     """Creates a sequence from the regex, knows how to test membership."""
 
+    _RepetitiveSequence = RepetitiveSequence
+
     def empty_list(self, *_):
         return []
 
@@ -372,7 +380,7 @@ class RegexMembershipSequence(WrappedSequence):
         """Sequential expansion of the count to be combinatorics."""
         max_count = min(max_count, self.max_count)
         max_count = max(max_count, min_count)
-        return RepetitiveSequence(self.sub_values(items), min_count, max_count)
+        return self._RepetitiveSequence(self.sub_values(items), min_count, max_count)
 
     def in_values(self, items):
         # Special case which distinguishes branch from charset operator
