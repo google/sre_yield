@@ -197,9 +197,39 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(["a-a", "b-b", "c-c"], parsed[:])
 
     def testSlicingMatches(self):
-        parsed = sre_yield.AllMatches(r"([abc])-\1")
-        self.assertEqual(3, len(parsed))
+        parsed = sre_yield.AllMatches(r"([abcd])-\1")
+        self.assertEqual(4, len(parsed))
+        self.assertEqual(4, len(parsed[:]))
+        self.assertTrue(all(isinstance(item, str) for item in parsed))
+        self.assertTrue(
+            all(isinstance(item, sre_yield.Match) for item in parsed[:])
+        )
+        self.assertEqual(["a-a", "b-b", "c-c", "d-d"], [x for x in parsed])
         self.assertEqual(["a-a", "b-b"], [x.group(0) for x in parsed[:2]])
+        self.assertEqual(["a", "b"], [x.group(1) for x in parsed[:2]])
+
+    def testSlicingMatchesMultichar(self):
+        parsed = sre_yield.AllMatches("z([ab]{2})")
+        self.assertEqual(4, len(parsed))
+        self.assertEqual(4, len(parsed[:]))
+        self.assertTrue(all(isinstance(item, str) for item in parsed))
+        self.assertTrue(
+            all(isinstance(item, sre_yield.Match) for item in parsed[:])
+        )
+        self.assertEqual(["zaa", "zab", "zba", "zbb"], [x for x in parsed])
+        self.assertEqual(["zaa", "zab", "zba", "zbb"], [x.group(0) for x in parsed[:]])
+        self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
+
+        parsed = sre_yield.AllMatches("([ab]{2})")
+        self.assertEqual(4, len(parsed))
+        self.assertEqual(4, len(parsed[:]))
+        self.assertTrue(all(isinstance(item, str) for item in parsed))
+        self.assertTrue(
+            all(isinstance(item, sre_yield.Match) for item in parsed[:])
+        )
+        self.assertEqual(["aa", "ab", "ba", "bb"], [x for x in parsed])
+        self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(0) for x in parsed[:]])
+        self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
 
     def testAllStringsIsValues(self):
         self.assertEqual(sre_yield.AllStrings, sre_yield.Values)

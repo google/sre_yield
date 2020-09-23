@@ -216,16 +216,13 @@ class CombinatoricsSequence(WrappedSequence):
         if i < 0 or i >= self.length:
             raise IndexError("Index %d out of bounds" % (i,))
 
-        if len(self.list_lengths) == 1:
-            # skip unnecessary ''.join -- big speedup
-            return self.list_lengths[0][0][i]
-
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)
             if hasattr(c, "get_item"):
                 result.append(c.get_item(mod, d))
             else:
                 result.append(c[mod])
+
         return "".join(result)
 
     def __repr__(self):
@@ -615,7 +612,7 @@ class Match:
 
 
 def AllMatches(regex, flags=0, charset=CHARSET, max_count=None, relaxed=False):
-    """Constructs an object that will generate all matching strings."""
+    """Constructs Match objects for all matching strings."""
     return RegexMembershipSequenceMatches(
         regex, flags, charset, max_count=max_count, relaxed=relaxed
     )
