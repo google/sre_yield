@@ -36,7 +36,7 @@ E = ExtractSliceType()
 # Confirm that the new slice_indices function behaves like SliceType.indices
 
 ARR = list(map(str, list(range(100))))
-REG = sre_yield.AllStrings(r"\d{1}|1\d|2\d|3\d|4\d|5\d|6\d|7\d|8\d|9\d")
+REG_RAW = r"\d{1}|1\d|2\d|3\d|4\d|5\d|6\d|7\d|8\d|9\d"
 
 NUMS = [None, 0, 2, 5, 80, 90, -20, -10, -1, 100, 110]
 
@@ -47,6 +47,7 @@ class SlicingTest(UnitTest):
     def test_prereqs(self):
         # TODO: Order of sre_yield may change at some point, to increment LSB
         # first.
+        REG = sre_yield.AllStrings(REG_RAW)
         self.assertEqual(ARR, list(REG))
 
     @data_provider(TESTCASES)
@@ -66,6 +67,7 @@ class SlicingTest(UnitTest):
         # print("indices", indices)
         expected = ARR[st]
         # print("expected", expected)
+        REG = sre_yield.AllStrings(REG_RAW)
         actual = list(REG[st])
         # print("actual", actual)
         self.assertEqual(expected, actual)
