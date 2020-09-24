@@ -80,6 +80,9 @@ def slice_indices(slice_obj, size):
     # due to None).
     if step is None:
         step = 1
+    elif step == 0:
+        raise ValueError("slice step cannot be zero")
+
     if start is None:
         if step > 0:
             start = 0
