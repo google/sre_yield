@@ -106,13 +106,16 @@ def slice_indices(slice_obj, size):
     return (start, stop, step)
 
 
-def _adjust_index(n, size, raise_index_error=True):
+def _adjust_index(i, size, raise_index_error=True):
+    n = i
     if n < 0:
         n += size
 
     if raise_index_error:
         if n < 0:
-            raise IndexError("Out of range")
+            raise IndexError("Index %d out of bounds" % (i,))
+        if n >= size:
+            raise IndexError("Index %d out of bounds" % (i,))
 
     if n > size:
         n = size
@@ -219,11 +222,8 @@ class CombinatoricsSequence(WrappedSequence):
             self.length *= c_len
 
     def get_item(self, i, d=None):
+        i = _adjust_index(i, self.length)
         result = []
-        if i < 0:
-            i += self.length
-        if i < 0 or i >= self.length:
-            raise IndexError("Index %d out of bounds" % (i,))
 
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)
