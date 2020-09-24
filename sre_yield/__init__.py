@@ -89,7 +89,7 @@ def slice_indices(slice_obj, size):
         else:
             start = size - 1
     else:
-        start = _adjust_index(start, size)
+        start = _adjust_index(start, size, raise_index_error=False)
 
     if stop is None:
         if step > 0:
@@ -97,17 +97,19 @@ def slice_indices(slice_obj, size):
         else:
             stop = -1
     else:
-        stop = _adjust_index(stop, size)
+        stop = _adjust_index(stop, size, raise_index_error=False)
 
     return (start, stop, step)
 
 
-def _adjust_index(n, size):
+def _adjust_index(n, size, raise_index_error=True):
     if n < 0:
         n += size
 
-    if n < 0:
-        raise IndexError("Out of range")
+    if raise_index_error:
+        if n < 0:
+            raise IndexError("Out of range")
+
     if n > size:
         n = size
     return n
