@@ -108,6 +108,23 @@ class YieldTest(unittest.TestCase):
         self.assertRaises(IndexError, parsed.get_item, len(parsed))
         self.assertRaises(IndexError, parsed.get_item, -len(parsed) - 1)
 
+    def testUnsupportedErrors(self):
+        parsed = sre_yield.AllStrings("x")
+        self.assertSequenceEqual(parsed, ["x"])
+        with self.assertRaises(TypeError) as cm:
+            parsed[:] = ["a"]
+        self.assertEqual(
+            str(cm.exception),
+            "'RegexMembershipSequence' object does not support item assignment",
+        )
+
+        with self.assertRaises(TypeError) as cm:
+            del parsed[0]
+        self.assertEqual(
+            str(cm.exception),
+            "'RegexMembershipSequence' object doesn't support item deletion",
+        )
+
     def testContains(self):
         parsed = sre_yield.AllStrings("[01]+")
         self.assertTrue("0101" in parsed)
