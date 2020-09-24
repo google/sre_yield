@@ -201,9 +201,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["a-a", "b-b", "c-c", "d-d"], [x for x in parsed])
         self.assertEqual(["a-a", "b-b"], [x.group(0) for x in parsed[:2]])
         self.assertEqual(["a", "b"], [x.group(1) for x in parsed[:2]])
@@ -213,9 +211,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["zaa", "zab", "zba", "zbb"], [x for x in parsed])
         self.assertEqual(["zaa", "zab", "zba", "zbb"], [x.group(0) for x in parsed[:]])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
@@ -224,9 +220,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["aa", "ab", "ba", "bb"], [x for x in parsed])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(0) for x in parsed[:]])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
