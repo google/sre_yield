@@ -75,11 +75,34 @@ class YieldTest(unittest.TestCase):
         self.assertSequenceEqual(parsed[1:-1], list("bcde"))
         self.assertSequenceEqual(parsed[1:-2], list("bcd"))
         self.assertSequenceEqual(parsed[1:99], list("bcdef"))
-        self.assertSequenceEqual(parsed[1:1], [])
 
-        self.assertEqual(parsed[1], "b")
-        self.assertEqual(parsed[-2], "e")
-        self.assertEqual(parsed[-1], "f")
+        self.assertSequenceEqual(parsed[0:0], [])
+        self.assertSequenceEqual(parsed[1:1], [])
+        self.assertSequenceEqual(parsed[-1:-99], [])
+        self.assertSequenceEqual(parsed[99:], [])
+        self.assertSequenceEqual(parsed[:-99], [])
+        self.assertSequenceEqual(parsed[99:-99], [])
+
+    def testSliceReverse(self):
+        parsed = sre_yield.AllStrings("[abcdef]")
+        self.assertSequenceEqual(parsed[::-1], list("fedcba"))
+        self.assertSequenceEqual(parsed[::-2], list("fdb"))
+
+        self.assertSequenceEqual(parsed[99::-1], list("fedcba"))
+        self.assertSequenceEqual(parsed[99:-99:-1], list("fedcba"))
+
+        self.assertSequenceEqual(parsed[99::-2], list("fdb"))
+        self.assertSequenceEqual(parsed[99:-99:-2], list("fdb"))
+
+        self.assertSequenceEqual(parsed[::-99], ["f"])
+        self.assertSequenceEqual(parsed[99::-99], ["f"])
+        self.assertSequenceEqual(parsed[99:-99:-99], ["f"])
+
+    def testSliceStepZero(self):
+        parsed = sre_yield.AllStrings("[abcdef]")
+        with self.assertRaises(ValueError) as cm:
+            parsed[0:1:0]
+        self.assertEqual(str(cm.exception), "slice step cannot be zero")
 
     def testSlicesRepeated(self):
         parsed = sre_yield.AllStrings("[abcdef]")
