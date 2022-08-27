@@ -17,6 +17,7 @@
 
 import io
 import re
+import sre_constants
 import sre_parse
 import sys
 import unittest
@@ -46,6 +47,9 @@ class YieldTest(unittest.TestCase):
             300 * 26 * 257,
         )
         self.assertEqual(len(sre_yield.AllStrings("..", charset="0123456789")), 100)
+        categories = sre_yield.CATEGORIES.copy()
+        categories[sre_constants.CATEGORY_WORD] = "0123456789"
+        self.assertEqual(len(sre_yield.AllStrings(r"\w\w", charset=categories)), 100)
         self.assertEqual(len(sre_yield.AllStrings("0*")), 65536)
         # For really big lists, we can't use the len() function any more
         with self.assertRaises(OverflowError):
