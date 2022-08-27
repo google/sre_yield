@@ -46,6 +46,7 @@ WORD = string.ascii_letters + string.digits + "_"
 DEFAULT_RE_FLAGS = re.ASCII
 
 STATE_START, STATE_MIDDLE, STATE_END = list(range(3))
+_SEQUENCE_OF_EMPTY_STRING = tuple([""])
 
 
 def Not(chars):
@@ -366,6 +367,11 @@ class RegexMembershipSequence(WrappedSequence):
 
     def branch_values(self, _, items):
         """Converts SRE parser data into literals and merges those lists."""
+        count = len(items)
+        if count == 0:
+            return ""
+        elif count == 1:
+            return self.sub_values(items[0])
         return ConcatenatedSequence(*[self.sub_values(parsed) for parsed in items])
 
     def max_repeat_values(self, min_count, max_count, items):
@@ -411,6 +417,11 @@ class RegexMembershipSequence(WrappedSequence):
             parsed = parsed.data
         # A list indicates sequential elements of a string
         if isinstance(parsed, list):
+            count = len(parsed)
+            if count == 0:
+                return _SEQUENCE_OF_EMPTY_STRING
+            elif count == 1:
+                return self.sub_values(parsed[0])
             elements = [self.sub_values(p) for p in parsed]
             return CombinatoricsSequence(*elements)
         # If not a list, a tuple represents a specific match type

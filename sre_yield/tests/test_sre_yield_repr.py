@@ -24,7 +24,8 @@ PY36 = sys.version_info[0:2] == (3, 6)
 
 MAX_REPEAT_COUNT = sre_yield.MAX_REPEAT_COUNT
 
-DOT_STAR_ALL_REPR = r"\({repeat base=256 low=0 high=%d}, \d+\)" % MAX_REPEAT_COUNT
+DOT_STAR_ALL_REPR = "{repeat base=256 low=0 high=%d}" % MAX_REPEAT_COUNT
+DOT_STAR_ALL_REPR_ITEM = r"\(%s, (\d+)\)" % DOT_STAR_ALL_REPR
 
 
 class ReprYieldTest(unittest.TestCase):
@@ -33,33 +34,33 @@ class ReprYieldTest(unittest.TestCase):
     def testDotStar(self):
         parsed = sre_yield.AllStrings(".*", re.DOTALL)
         out = repr(parsed.raw)
-        self.assertTrue(re.match(r"{combin \[%s\]}" % DOT_STAR_ALL_REPR, out))
+        self.assertTrue(re.match(DOT_STAR_ALL_REPR, out))
 
         parsed = sre_yield.AllStrings(".*.*.*", re.DOTALL)
         out = repr(parsed.raw)
 
-        expected_re = r"{combin \[%s\]}" % ", ".join([DOT_STAR_ALL_REPR] * 3)
+        expected_re = r"{combin \[%s\]}" % ", ".join([DOT_STAR_ALL_REPR_ITEM] * 3)
         self.assertTrue(re.match(expected_re, out))
 
     def testAlternatives(self):
         parsed = sre_yield.AllStrings(r"a|b")
         self.assertEqual(
-            repr(parsed.raw), "{combin [({concat [(['a'], 1), (['b'], 1)]}, 2)]}"
+            repr(parsed.raw), "{concat [(['a'], 1), (['b'], 1)]}"
         )
         parsed = sre_yield.AllStrings(r"a||b")
         self.assertEqual(
             repr(parsed.raw),
-            "{combin [({concat [({combin [(['a'], 1)]}, 1), ({combin []}, 1), ({combin [(['b'], 1)]}, 1)]}, 3)]}",
+            "{concat [(['a'], 1), (('',), 1), (['b'], 1)]}",
         )
 
     def testRepeat(self):
         parsed = sre_yield.AllStrings(r"\d{1}")
         self.assertEqual(
-            repr(parsed.raw), "{combin [({repeat base=10 low=1 high=1}, 10)]}"
+            repr(parsed.raw), "{repeat base=10 low=1 high=1}"
         )
         parsed = sre_yield.AllStrings(r"\d{2}")
         self.assertEqual(
-            repr(parsed.raw), "{combin [({repeat base=10 low=2 high=2}, 100)]}"
+            repr(parsed.raw), "{repeat base=10 low=2 high=2}"
         )
 
     def testRepeatPlus(self):
@@ -67,7 +68,7 @@ class ReprYieldTest(unittest.TestCase):
         out = repr(parsed.raw)
 
         expected_re = (
-            r"{combin \[\({repeat base=10 low=1 high=%d}, \d+\)\]}" % MAX_REPEAT_COUNT
+            r"{repeat base=10 low=1 high=%d}" % MAX_REPEAT_COUNT
         )
         self.assertTrue(re.match(expected_re, out))
 
@@ -80,14 +81,14 @@ class ReprYieldTest(unittest.TestCase):
 
     def testGroup(self):
         parsed = sre_yield.AllStrings(r"(?:\d{2})")
-        expected = "{combin [({repeat base=10 low=2 high=2}, 100)]}"
+        expected = "{repeat base=10 low=2 high=2}"
         if PY36:
             expected = "{combin [(%s, 100)]}" % expected
 
         self.assertEqual(repr(parsed.raw), expected)
 
         parsed = sre_yield.AllStrings(r"(?:\d{,2})")
-        expected = "{combin [({repeat base=10 low=0 high=2}, 111)]}"
+        expected = "{repeat base=10 low=0 high=2}"
         if PY36:
             expected = "{combin [(%s, 111)]}" % expected
 
@@ -96,12 +97,12 @@ class ReprYieldTest(unittest.TestCase):
     def testBenchInput(self):
         parsed = sre_yield.AllStrings("[01]{,10}")
         self.assertEqual(
-            repr(parsed.raw), "{combin [({repeat base=2 low=0 high=10}, 2047)]}"
+            repr(parsed.raw), "{repeat base=2 low=0 high=10}"
         )
 
         parsed = sre_yield.AllStrings("(?:[a-z]{,10}){,1000}")
         out = repr(parsed.raw)
-        expected_re = r"{combin \[\({repeat base=(\d+) low=0 high=1000}, (\d+)\)\]}"
+        expected_re = r"{repeat base=(\d+) low=0 high=1000}"
         m = re.match(expected_re, out)
         self.assertTrue(m)
         self.assertEqual(int(m.group(1)), 146813779479511)
@@ -119,7 +120,7 @@ class ReprYieldTest(unittest.TestCase):
     def testBenchInputSlow(self):
         parsed = sre_yield.AllStrings("(?:[a-z]{,100})")
         out = repr(parsed.raw)
-        expected_re1 = r"{combin \[\({repeat base=(\d+) low=0 high=100}, (\d+)\)\]}"
+        expected_re1 = r"{repeat base=(\d+) low=0 high=100}"
         if PY36:
             expected_re = r"{combin \[\(%s, (\d+)\)\]}" % expected_re1
         else:
@@ -128,10 +129,7 @@ class ReprYieldTest(unittest.TestCase):
         m = re.match(expected_re, out)
         self.assertTrue(m)
         base1 = m.group(1)
-        repeat1 = m.group(2)
         self.assertEqual(int(base1), 26)
-        if PY36:
-            self.assertEqual(int(repeat1), int(m.group(3)))
 
         parsed = sre_yield.AllStrings("(?:(?:[a-z]{,100}){,100}){,100}")
         out = repr(parsed.raw)
@@ -143,11 +141,9 @@ class ReprYieldTest(unittest.TestCase):
         self.assertTrue(m)
 
         base2 = m.group(1)
-        repeat2 = m.group(2)
         self.assertEqual(len(base2), 14152)
 
         self.assertGreater(int(base2), int(base1))
-        self.assertGreater(int(repeat2), int(repeat1))
 
 
 if __name__ == "__main__":
