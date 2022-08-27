@@ -41,6 +41,17 @@ def divmod_iter(x, by, chunk=None):
     if chunk is not None and not isinstance(chunk, int):
         raise TypeError("`chunk` must be an int")
 
+    if by == 1:
+        if x != 0:
+            raise ValueError(
+                "x=0 by=1 is allowed as a base case, but no other x may have by=1"
+            )
+
+        def gen_zero():
+            yield 0
+
+        return gen_zero()
+
     if x < by:
         return [x]
 
@@ -65,14 +76,6 @@ def divmod_iter_chunking(x, by, chunk=None):
     If provided, |chunk| must be a power of |by| (otherwise it is determined
     automatically for 1024 per inner loop, based on analysis of bench_fastdivmod.py)
     """
-
-    if by == 1:
-        if x != 0:
-            raise ValueError(
-                "x=0 by=1 is allowed as a base case, but no other x may have by=1"
-            )
-        yield 0
-        return
 
     if chunk is None:
         digits_per_chunk = 1024

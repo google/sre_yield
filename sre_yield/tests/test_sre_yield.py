@@ -23,6 +23,8 @@ import unittest
 
 import sre_yield
 
+PY36 = sys.version_info[0:2] == (3, 6)
+
 
 class YieldTest(unittest.TestCase):
     """Test that regular expressions give the right lists."""
@@ -47,12 +49,21 @@ class YieldTest(unittest.TestCase):
         )
         self.assertEqual(len(sre_yield.AllStrings("..", charset="0123456789")), 100)
         self.assertEqual(len(sre_yield.AllStrings("0*")), 65536)
-        # For really big lists, we can't use the len() function any more
-        with self.assertRaises(OverflowError):
-            len(sre_yield.AllStrings(r"\d+"))
-        with self.assertRaises(OverflowError):
-            len(sre_yield.AllStrings("[01]*"))
         self.assertEqual(sre_yield.AllStrings("[01]*").__len__(), 2 ** 65536 - 1)
+
+    def testOverflowError(self):
+        # For really big lists, we can't use the len() function any more
+        with self.assertRaises(OverflowError) as cm:
+            len(sre_yield.AllStrings(r"\d+"))
+        self.assertEqual(
+            str(cm.exception), "cannot fit 'int' into an index-sized integer"
+        )
+
+        with self.assertRaises(OverflowError) as cm:
+            len(sre_yield.AllStrings("[01]*"))
+        self.assertEqual(
+            str(cm.exception), "cannot fit 'int' into an index-sized integer"
+        )
 
     def testLargeSequenceSliceLength(self):
         self.assertEqual(len(sre_yield.AllStrings(r"\d+")[:16]), 16)
@@ -75,11 +86,34 @@ class YieldTest(unittest.TestCase):
         self.assertSequenceEqual(parsed[1:-1], list("bcde"))
         self.assertSequenceEqual(parsed[1:-2], list("bcd"))
         self.assertSequenceEqual(parsed[1:99], list("bcdef"))
-        self.assertSequenceEqual(parsed[1:1], [])
 
-        self.assertEqual(parsed[1], "b")
-        self.assertEqual(parsed[-2], "e")
-        self.assertEqual(parsed[-1], "f")
+        self.assertSequenceEqual(parsed[0:0], [])
+        self.assertSequenceEqual(parsed[1:1], [])
+        self.assertSequenceEqual(parsed[-1:-99], [])
+        self.assertSequenceEqual(parsed[99:], [])
+        self.assertSequenceEqual(parsed[:-99], [])
+        self.assertSequenceEqual(parsed[99:-99], [])
+
+    def testSliceReverse(self):
+        parsed = sre_yield.AllStrings("[abcdef]")
+        self.assertSequenceEqual(parsed[::-1], list("fedcba"))
+        self.assertSequenceEqual(parsed[::-2], list("fdb"))
+
+        self.assertSequenceEqual(parsed[99::-1], list("fedcba"))
+        self.assertSequenceEqual(parsed[99:-99:-1], list("fedcba"))
+
+        self.assertSequenceEqual(parsed[99::-2], list("fdb"))
+        self.assertSequenceEqual(parsed[99:-99:-2], list("fdb"))
+
+        self.assertSequenceEqual(parsed[::-99], ["f"])
+        self.assertSequenceEqual(parsed[99::-99], ["f"])
+        self.assertSequenceEqual(parsed[99:-99:-99], ["f"])
+
+    def testSliceStepZero(self):
+        parsed = sre_yield.AllStrings("[abcdef]")
+        with self.assertRaises(ValueError) as cm:
+            parsed[0:1:0]
+        self.assertEqual(str(cm.exception), "slice step cannot be zero")
 
     def testSlicesRepeated(self):
         parsed = sre_yield.AllStrings("[abcdef]")
@@ -104,9 +138,82 @@ class YieldTest(unittest.TestCase):
         parsed.get_item(len(parsed) - 1)
         parsed.get_item(-len(parsed))
 
+    def testGetItemNegativeIndexError(self):
+        parsed = sre_yield.AllStrings("x|[a-z]{1,5}")
         # precisely 1 out of bounds
-        self.assertRaises(IndexError, parsed.get_item, len(parsed))
-        self.assertRaises(IndexError, parsed.get_item, -len(parsed) - 1)
+        with self.assertRaises(IndexError) as cm:
+            parsed.get_item(len(parsed))
+        self.assertEqual(str(cm.exception), "Index %d out of bounds" % len(parsed))
+
+        with self.assertRaises(IndexError) as cm:
+            parsed.get_item(-len(parsed) - 1)
+        self.assertEqual(
+            str(cm.exception), "Index %d out of bounds" % (-len(parsed) - 1)
+        )
+
+    def testIndexError(self):
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("x").get_item(1)
+        self.assertEqual(str(cm.exception), "Index 1 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            parsed = sre_yield.AllStrings("xa{3}[a]y")
+            print(list(parsed))
+            parsed.get_item(1)
+        self.assertEqual(str(cm.exception), "Index 1 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("x?").get_item(2)
+        self.assertEqual(str(cm.exception), "Index 2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("[xy]").get_item(2)
+        self.assertEqual(str(cm.exception), "Index 2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("x|y").get_item(2)
+        self.assertEqual(str(cm.exception), "Index 2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("xa?y").get_item(2)
+        self.assertEqual(str(cm.exception), "Index 2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings(r"x\dy").get_item(10)
+        self.assertEqual(str(cm.exception), "Index 10 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("x").get_item(-2)
+        self.assertEqual(str(cm.exception), "Index -2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("xa{3}[a]y").get_item(-2)
+        self.assertEqual(str(cm.exception), "Index -2 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("[xy]").get_item(-3)
+        self.assertEqual(str(cm.exception), "Index -3 out of bounds")
+
+        with self.assertRaises(IndexError) as cm:
+            sre_yield.AllStrings("x|y").get_item(-3)
+        self.assertEqual(str(cm.exception), "Index -3 out of bounds")
+
+    def testUnsupportedErrors(self):
+        parsed = sre_yield.AllStrings("x")
+        self.assertSequenceEqual(parsed, ["x"])
+        with self.assertRaises(TypeError) as cm:
+            parsed[:] = ["a"]
+        self.assertEqual(
+            str(cm.exception),
+            "'RegexMembershipSequence' object does not support item assignment",
+        )
+
+        with self.assertRaises(TypeError) as cm:
+            del parsed[0]
+        self.assertEqual(
+            str(cm.exception),
+            "'RegexMembershipSequence' object doesn't support item deletion",
+        )
 
     def testContains(self):
         parsed = sre_yield.AllStrings("[01]+")
@@ -173,7 +280,9 @@ class YieldTest(unittest.TestCase):
         self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, "a", re.I)
         self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, "a", re.U)
         # Causes a failure inside sre_parse under Python 3.6
-        # self.assertRaises(sre_yield.ParseError, sre_yield.AllStrings, 'a', re.L)
+        with self.assertRaises(ValueError) as cm:
+            sre_yield.AllStrings("a", re.L)
+        self.assertEqual(str(cm.exception), "cannot use LOCALE flag with a str pattern")
 
     def testSavingGroups(self):
         parsed = sre_yield.AllStrings(r"(([abc])d)e")
@@ -201,9 +310,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["a-a", "b-b", "c-c", "d-d"], [x for x in parsed])
         self.assertEqual(["a-a", "b-b"], [x.group(0) for x in parsed[:2]])
         self.assertEqual(["a", "b"], [x.group(1) for x in parsed[:2]])
@@ -213,9 +320,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["zaa", "zab", "zba", "zbb"], [x for x in parsed])
         self.assertEqual(["zaa", "zab", "zba", "zbb"], [x.group(0) for x in parsed[:]])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])
@@ -224,9 +329,7 @@ class YieldTest(unittest.TestCase):
         self.assertEqual(4, len(parsed))
         self.assertEqual(4, len(parsed[:]))
         self.assertTrue(all(isinstance(item, str) for item in parsed))
-        self.assertTrue(
-            all(isinstance(item, sre_yield.Match) for item in parsed[:])
-        )
+        self.assertTrue(all(isinstance(item, sre_yield.Match) for item in parsed[:]))
         self.assertEqual(["aa", "ab", "ba", "bb"], [x for x in parsed])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(0) for x in parsed[:]])
         self.assertEqual(["aa", "ab", "ba", "bb"], [x.group(1) for x in parsed[:]])

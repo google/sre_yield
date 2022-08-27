@@ -80,13 +80,18 @@ def slice_indices(slice_obj, size):
     # due to None).
     if step is None:
         step = 1
+    elif step == 0:
+        raise ValueError("slice step cannot be zero")
+
     if start is None:
         if step > 0:
             start = 0
         else:
             start = size - 1
     else:
-        start = _adjust_index(start, size)
+        start = _adjust_index(start, size, raise_index_error=False)
+        if step < 0:
+            start = min(start, size - 1)
 
     if stop is None:
         if step > 0:
@@ -94,17 +99,24 @@ def slice_indices(slice_obj, size):
         else:
             stop = -1
     else:
-        stop = _adjust_index(stop, size)
+        stop = _adjust_index(stop, size, raise_index_error=False)
+        if step < 0:
+            stop = max(stop, -1)
 
     return (start, stop, step)
 
 
-def _adjust_index(n, size):
+def _adjust_index(i, size, raise_index_error=True):
+    n = i
     if n < 0:
         n += size
 
-    if n < 0:
-        raise IndexError("Out of range")
+    if raise_index_error:
+        if n < 0:
+            raise IndexError("Index %d out of bounds" % (i,))
+        if n >= size:
+            raise IndexError("Index %d out of bounds" % (i,))
+
     if n > size:
         n = size
     return n
@@ -210,11 +222,8 @@ class CombinatoricsSequence(WrappedSequence):
             self.length *= c_len
 
     def get_item(self, i, d=None):
+        i = _adjust_index(i, self.length)
         result = []
-        if i < 0:
-            i += self.length
-        if i < 0 or i >= self.length:
-            raise IndexError("Index %d out of bounds" % (i,))
 
         for c, c_len in self.list_lengths:
             i, mod = divmod(i, c_len)

@@ -259,9 +259,9 @@ class FastDivmodTest(UnitTest):
             divmod_iter(1, 1, "a")
 
     def test_divmod_iter_special_case(self):
-        self.assertEqual([0], list(divmod_iter_chunking(0, 1)))
+        self.assertEqual([0], list(divmod_iter(0, 1)))
         with self.assertRaises(ValueError):
-            list(divmod_iter_chunking(1, 1))
+            list(divmod_iter(1, 1))
 
     @data_provider(
         [
